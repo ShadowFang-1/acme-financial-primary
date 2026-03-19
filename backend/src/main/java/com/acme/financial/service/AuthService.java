@@ -115,6 +115,7 @@ public class AuthService {
                 .build();
     }
 
+    @Transactional
     public void sendOtp(String identifier, String email) {
         User user = repository.findByIdentifier(identifier).stream()
                 .findFirst()
@@ -124,7 +125,7 @@ public class AuthService {
         String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
         user.setOneTimePassword(otp);
         user.setOtpExpiry(java.time.LocalDateTime.now().plusMinutes(5));
-        repository.save(user);
+        repository.saveAndFlush(user);
 
         // Production dispatch via Email (100% Free)
         emailService.sendEmail(
@@ -134,6 +135,7 @@ public class AuthService {
         );
     }
 
+    @Transactional
     public AuthenticationResponse verifyOtp(OtpVerificationRequest request) {
         System.out.println(">>> [OTP VERIFY] Identifier: " + request.getIdentifier() + " | Code: " + request.getOtp());
         
@@ -169,10 +171,10 @@ public class AuthService {
                     .balance(new BigDecimal("1000.00")) 
                     .type(AccountType.SAVINGS)
                     .build();
-            accountRepository.save(account);
+            accountRepository.saveAndFlush(account);
             System.out.println(">>> [REGISTRATION SUCCESS] Account activated: " + user.getUsername());
         }
-        repository.save(user);
+        repository.saveAndFlush(user);
         System.out.println(">>> [OTP SUCCESS] User verified: " + user.getUsername());
 
         // If login notifications are enabled, send a notification
