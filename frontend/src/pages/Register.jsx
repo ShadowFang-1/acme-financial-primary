@@ -31,7 +31,9 @@ const Register = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      setError(err.message || 'Registration failed.');
+      // Prioritize specific backend error messages (e.g., 'Email already exists')
+      const errorMessage = err.message || (err.response?.data?.message) || 'Registration failed.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -83,7 +85,7 @@ const Register = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Phone String</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Primary Phone</label>
                 <div className="relative">
                   <Landmark className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input
@@ -96,9 +98,9 @@ const Register = () => {
                   />
                 </div>
               </div>
- 
+
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Region</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Territory</label>
                 <div className="relative">
                   <Landmark className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <select

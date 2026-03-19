@@ -12,6 +12,7 @@ import com.acme.financial.repository.AccountRepository;
 import com.acme.financial.repository.UserRepository;
 import com.acme.financial.security.JwtService;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.Random;
 
 @Service
@@ -45,17 +47,34 @@ public class AuthService {
 
     @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
-        User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.USER)
-                .enabled(false) // Account starts as disabled until email is verified
-                .phoneNumber(request.getPhoneNumber())
-                .country(request.getCountry())
-                .dateOfBirth(request.getDateOfBirth())
-                .build();
-        User savedUser = repository.save(user);
+        Optional<User> existingUser = repository.findByEmail(request.getEmail());
+        
+        User user;
+        if (existingUser.isPresent()) {
+            user = existingUser.get();
+            if (user.isEnabled()) {
+                throw new DataIntegrityViolationException("An account with this email already exists.");
+            }
+            // User exists but is unverified: update details to match latest attempt
+            user.setUsername(request.getUsername());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setPhoneNumber(request.getPhoneNumber());
+            user.setCountry(request.getCountry());
+            user.setDateOfBirth(request.getDateOfBirth());
+        } else {
+            user = User.builder()
+                    .username(request.getUsername())
+                    .email(request.getEmail())
+                    .password(passwordEncoder.encode(request.getPassword()))
+                    .role(Role.USER)
+                    .enabled(false) // Account starts as disabled until email is verified
+                    .phoneNumber(request.getPhoneNumber())
+                    .country(request.getCountry())
+                    .dateOfBirth(request.getDateOfBirth())
+                    .build();
+        }
+
+        User savedUser = repository.saveAndFlush(user);
         
         // Dispatch Initial Verification Challenge
         sendOtp(savedUser.getEmail(), savedUser.getEmail());

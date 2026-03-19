@@ -40,6 +40,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        ex.printStackTrace(); // Log full stack trace for cloud diagnostics
         Map<String, String> response = new HashMap<>();
         response.put("message", ex.getMessage() != null ? ex.getMessage() : "An error occurred.");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
