@@ -40,9 +40,9 @@ A production-ready, full-stack banking application built with Spring Boot, React
 3. Run `npm run dev`.
 4. Access at `http://localhost:5173`.
 
-## Admin Credentials
-- **Email:** admin@acme.com
-- **Password:** admin123
+## 🔐 Security Information
+- **Administrative Access**: For initial setup, use the configured environment variables for admin role assignment or create a user with the `ADMIN` role via the secure API endpoints.
+- **Passwords**: All passwords must be hashed using the platform's BCrypt engine before being stored in the cryptographic ledger.
 
 ## Security Best Practices
 - Sensitive data is encrypted in transit using SSL/TLS.
