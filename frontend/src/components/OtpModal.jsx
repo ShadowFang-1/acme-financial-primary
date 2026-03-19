@@ -61,7 +61,13 @@ const OtpModal = ({ isOpen, onClose, onVerify, onResend, identifier, emailAddres
                   className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 px-6 text-2xl font-black tracking-[0.5em] text-center focus:border-primary focus:bg-white transition-all outline-none"
                   placeholder="000000"
                   value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    setOtp(val);
+                    if (val.length === 6 && !loading) {
+                      onVerify(val);
+                    }
+                  }}
                 />
               </div>
             </div>

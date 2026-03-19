@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import com.acme.financial.repository.UserRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AccountService {
@@ -24,10 +25,12 @@ public class AccountService {
         this.userRepository = userRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<Account> getAccountsByUser(User user) {
         return repository.findByUser(user);
     }
 
+    @Transactional(readOnly = true)
     public Optional<Account> getAccountByNumber(String accountNumber) {
         return repository.findByAccountNumber(accountNumber);
     }
@@ -60,6 +63,7 @@ public class AccountService {
         return repository.save(account);
     }
 
+    @Transactional(readOnly = true)
     public Optional<Account> getAccountByPhoneNumber(String phoneNumber) {
         return userRepository.findByPhoneNumber(phoneNumber)
                 .flatMap(user -> repository.findByUser(user).stream().findFirst());

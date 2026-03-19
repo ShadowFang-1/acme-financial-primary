@@ -154,6 +154,7 @@ public class TransactionService {
         notificationService.notify(user, "Withdrawal Successful", msg);
     }
 
+    @Transactional(readOnly = true)
     public Page<Transaction> getTransactionHistory(Account account, Pageable pageable) {
         return transactionRepository.findAllByAccount(account.getId(), pageable);
     }

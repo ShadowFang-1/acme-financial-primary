@@ -12,6 +12,9 @@
 }
 
 @layer base {
+  * {
+    @apply transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)];
+  }
   body {
     @apply text-slate-900 antialiased bg-[#f8fafc];
     font-family: 'Inter', sans-serif;
