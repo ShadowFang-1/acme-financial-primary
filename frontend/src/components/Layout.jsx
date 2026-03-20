@@ -137,9 +137,10 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 px-6 shrink-0">Main Menu</div>
         
-        <div className="flex-1 flex flex-col gap-3 relative overflow-hidden h-[320px]">
-          <div className="flex-1 space-y-3 transition-all duration-500 animate-in fade-in slide-in-from-bottom-2">
-            {visibleItems.map((item) => (
+        {/* Navigation - No longer paginated, now scrollable for better UX */}
+        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="flex flex-col gap-3 pb-8 animate-in fade-in slide-in-from-bottom-2">
+            {menuItems.map((item) => (
               <SidebarLink 
                 key={item.to}
                 to={item.to} 
@@ -149,31 +150,6 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
                 badge={item.badge && user?.pushNotifications ? unreadCount : 0}
               />
             ))}
-          </div>
-
-          <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between px-6 shrink-0">
-             <div className="flex gap-1.5 opacity-60">
-                <div className={`w-1.5 h-1.5 rounded-full ${sidebarIndex === 0 ? 'bg-secondary' : 'bg-white/20'}`}></div>
-                <div className={`w-1.5 h-1.5 rounded-full ${sidebarIndex > 0 && sidebarIndex < menuItems.length - 4 ? 'bg-secondary' : 'bg-white/20'}`}></div>
-                <div className={`w-1.5 h-1.5 rounded-full ${sidebarIndex === menuItems.length - 4 ? 'bg-secondary' : 'bg-white/20'}`}></div>
-             </div>
-             <div className="flex gap-2">
-                <button 
-                  disabled={sidebarIndex === 0}
-                  onClick={() => setSidebarIndex(0)}
-                  className="p-1.5 rounded-lg bg-white/5 text-slate-400 hover:text-white disabled:opacity-0 transition-all"
-                >
-                  <ChevronUp size={16} />
-                </button>
-                <button 
-                  disabled={sidebarIndex + 4 >= menuItems.length}
-                  onClick={() => setSidebarIndex(prev => prev + 1)}
-                  className="p-1.5 rounded-lg bg-secondary text-primary hover:scale-110 active:scale-95 transition-all shadow-lg shadow-secondary/20 flex items-center gap-1 group"
-                >
-                  <MoreHorizontal size={14} className="group-hover:rotate-90 transition-transform" />
-                  <ChevronDown size={14} />
-                </button>
-             </div>
           </div>
         </div>
       </div>
@@ -185,17 +161,17 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
               {user?.imageUrl ? (
                 <img src={user.imageUrl} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
-                user?.username?.[0]?.toUpperCase()
+                user?.username?.[0]?.toUpperCase() 
               )}
             </div>
             <div className="overflow-hidden">
-              <p className="font-bold truncate group-hover/profile:text-secondary transition-colors text-sm">{user?.username}</p>
-              <p className="text-[9px] text-slate-400 truncate opacity-60 uppercase font-black tracking-widest group-hover/profile:opacity-100 transition-opacity">{user?.role} Access</p>
+              <p className="font-extrabold truncate group-hover/profile:text-secondary transition-colors text-sm uppercase tracking-tight">{user?.username || 'User Account'}</p>
+              <p className="text-[9px] text-slate-400 truncate opacity-60 uppercase font-black tracking-widest group-hover/profile:opacity-100 transition-opacity">{user?.role} ACCESS</p>
             </div>
           </Link>
           <button onClick={logout} className="flex items-center gap-3 w-full py-3 px-4 rounded-xl text-red-100 font-bold bg-red-500/20 hover:bg-red-500/30 transition-all group/btn">
             <LogOut size={18} className="group-hover/btn:-translate-x-1 transition-transform shrink-0" />
-            <span className="text-sm">Sign Out</span>
+            <span className="text-sm font-black uppercase tracking-widest">Sign Out</span>
           </button>
         </div>
       </div>

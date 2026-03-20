@@ -194,7 +194,7 @@ public class AuthService {
         var jwtToken = jwtService.generateToken(user);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
-                .username(user.getUsername())
+                .username(user.getDisplayName())
                 .email(user.getEmail())
                 .role(user.getRole())
                 .imageUrl(user.getImageUrl())
