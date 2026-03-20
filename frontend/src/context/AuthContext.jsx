@@ -3,6 +3,10 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
+// Force the API to hit the backend directly on Render
+// This bypasses the need for complex proxy rules and makes it 100% reliable
+axios.defaults.baseURL = 'https://acme-financial-backend.onrender.com';
+
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
