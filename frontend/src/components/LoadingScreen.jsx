@@ -2,7 +2,10 @@ import React from 'react';
 
 const LoadingScreen = ({ message = "Securing your connection..." }) => {
   return (
-    <div className="fixed inset-0 bg-primary flex flex-col items-center justify-center z-[100] p-6 text-center">
+    <div 
+      className="fixed inset-0 bg-primary flex flex-col items-center justify-center z-[100] p-6 text-center text-white"
+      style={{ backgroundColor: '#0f172a' }}
+    >
       {/* Premium Gradient Background Blur */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-accent/20 rounded-full blur-[120px] pointer-events-none"></div>
       

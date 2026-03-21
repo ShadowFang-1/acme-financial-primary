@@ -16,9 +16,15 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('token');
-      if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        try {
+      
+      try {
+        // Step 1: 'Is Awake' Sync - Ensure backend is responsive before checking auth
+        // This prevents the 'blank white screen' during Render cold starts
+        await axios.get('/api/v1/status');
+        
+        // Step 2: Initialize Auth if token exists
+        if (token) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
           const res = await axios.get('/api/v1/users/me');
           const userData = { 
             username: res.data.username, 
@@ -31,15 +37,18 @@ export const AuthProvider = ({ children }) => {
           };
           setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
-        } catch (err) {
-          // If token invalid, logout
+        }
+      } catch (err) {
+        console.warn("[Antigravity] Initial sync or auth check failed:", err.message);
+        if (token) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           delete axios.defaults.headers.common['Authorization'];
           setUser(null);
         }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     initAuth();
   }, []);
