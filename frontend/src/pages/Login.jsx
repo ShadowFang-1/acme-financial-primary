@@ -68,7 +68,7 @@ const Login = () => {
       setIsOtpModalOpen(false);
       handlePostAuth(user);
     } catch (err) {
-      setError(err.message || 'Invalid code. Authentication challenge failed.');
+      setError(err.response?.data?.message || 'Invalid code. Authentication challenge failed.');
     } finally {
       setLoading(false);
     }
@@ -174,6 +174,7 @@ const Login = () => {
         identifier={identifier}
         emailAddress={emailAddress}
         loading={loading}
+        error={error}
       />
     </div>
   );

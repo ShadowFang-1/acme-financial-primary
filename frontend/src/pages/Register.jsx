@@ -406,6 +406,7 @@ const Register = () => {
         identifier={email}
         emailAddress={email}
         loading={loading}
+        error={error}
       />
     </div>
   );

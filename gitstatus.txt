@@ -1,0 +1,22 @@
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   backend/src/main/java/com/acme/financial/config/SecurityConfig.java
+	modified:   backend/src/main/java/com/acme/financial/controller/GlobalExceptionHandler.java
+	modified:   frontend/src/App.jsx
+	modified:   frontend/src/components/OtpModal.jsx
+	modified:   frontend/src/index.css
+	modified:   frontend/src/pages/Login.jsx
+	modified:   frontend/src/pages/Register.jsx
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	backend/src/main/java/com/acme/financial/controller/SystemStatusController.java
+	frontend/src/components/LoadingScreen.jsx
+	frontend/src/components/RestorationManager.jsx
+	gitstatus.txt
+
+no changes added to commit (use "git add" and/or "git commit -a")

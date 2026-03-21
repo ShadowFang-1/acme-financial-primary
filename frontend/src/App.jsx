@@ -11,11 +11,16 @@ import ForgotPassword from './pages/ForgotPassword';
 import LandingPage from './pages/LandingPage';
 import Notifications from './pages/Notifications';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import RestorationManager from './components/RestorationManager';
+import LoadingScreen from './components/LoadingScreen';
 
+/**
+ * Enhanced ProtectedRoute that uses the themed LoadingScreen during auth checks.
+ */
 const ProtectedRoute = ({ children, role }) => {
   const { user, loading } = useAuth();
   
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <LoadingScreen message="Checking authentication status..." />;
   if (!user) return <Navigate to="/login" />;
   
   // If a specific role is required and mismatch
@@ -24,10 +29,7 @@ const ProtectedRoute = ({ children, role }) => {
   }
 
   // If no specific role is required but user is ADMIN, steer them to admin console by default 
-  // unless they are explicitly visiting profile or notifications (if shared)
-  // For this request, we want to remove 'user-like' features from Admin
   if (!role && user.role === 'ADMIN') {
-    // List of routes that are 'user-like' and should be hidden from Admin
     return <Navigate to="/admin" />;
   }
   
@@ -38,55 +40,57 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          
-          <Route path="/dashboard" element={
-            <ProtectedRoute role="USER">
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/transfer" element={
-            <ProtectedRoute role="USER">
-              <Transfer />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/transactions" element={
-            <ProtectedRoute role="USER">
-              <Transactions />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/profile" element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          } />
+        <RestorationManager>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            
+            <Route path="/dashboard" element={
+              <ProtectedRoute role="USER">
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/transfer" element={
+              <ProtectedRoute role="USER">
+                <Transfer />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/transactions" element={
+              <ProtectedRoute role="USER">
+                <Transactions />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/admin" element={
-            <ProtectedRoute role="ADMIN">
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
+            <Route path="/admin" element={
+              <ProtectedRoute role="ADMIN">
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/admin/stats" element={
-            <ProtectedRoute role="ADMIN">
-              <AdminStats />
-            </ProtectedRoute>
-          } />
+            <Route path="/admin/stats" element={
+              <ProtectedRoute role="ADMIN">
+                <AdminStats />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/notifications" element={
-            <ProtectedRoute role="USER">
-              <Notifications />
-            </ProtectedRoute>
-          } />
+            <Route path="/notifications" element={
+              <ProtectedRoute role="USER">
+                <Notifications />
+              </ProtectedRoute>
+            } />
 
-          <Route path="/" element={<LandingPage />} />
-        </Routes>
+            <Route path="/" element={<LandingPage />} />
+          </Routes>
+        </RestorationManager>
       </AuthProvider>
     </Router>
   );

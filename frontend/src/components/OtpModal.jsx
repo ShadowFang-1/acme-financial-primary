@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Loader2, X, ShieldCheck } from 'lucide-react';
+import { Mail, Loader2, X, ShieldCheck, AlertCircle } from 'lucide-react';
 
-const OtpModal = ({ isOpen, onClose, onVerify, onResend, identifier, emailAddress, loading }) => {
+const OtpModal = ({ isOpen, onClose, onVerify, onResend, identifier, emailAddress, loading, error }) => {
   const [otp, setOtp] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
+  const [shake, setShake] = useState(false);
 
   useEffect(() => {
     let timer;
@@ -13,11 +14,21 @@ const OtpModal = ({ isOpen, onClose, onVerify, onResend, identifier, emailAddres
     return () => clearInterval(timer);
   }, [resendTimer]);
 
+  useEffect(() => {
+    if (error) {
+      setShake(true);
+      const timer = setTimeout(() => setShake(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   if (!isOpen) return null;
 
   const handleVerify = (e) => {
     e.preventDefault();
-    onVerify(otp);
+    if (otp.length === 6) {
+      onVerify(otp);
+    }
   };
 
   const handleResend = () => {
@@ -31,7 +42,7 @@ const OtpModal = ({ isOpen, onClose, onVerify, onResend, identifier, emailAddres
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}></div>
       
-      <div className="bg-white rounded-[32px] w-full max-w-md relative z-10 shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-300">
+      <div className={`bg-white rounded-[32px] w-full max-w-md relative z-10 shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in duration-300 ${shake ? 'animate-shake' : ''}`}>
         <div className="p-8">
           <div className="flex justify-between items-start mb-6">
             <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
@@ -42,7 +53,7 @@ const OtpModal = ({ isOpen, onClose, onVerify, onResend, identifier, emailAddres
             </button>
           </div>
 
-          <div className="mb-8 font-inter">
+          <div className="mb-8 font-inter text-center">
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 font-outfit mb-2">Two-Factor Security</h2>
             <p className="text-slate-500 font-medium">
               We've sent a 6-digit cryptographic code to:
@@ -58,18 +69,26 @@ const OtpModal = ({ isOpen, onClose, onVerify, onResend, identifier, emailAddres
                   type="text"
                   required
                   maxLength="6"
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl py-4 px-6 text-2xl font-black tracking-[0.5em] text-center focus:border-primary focus:bg-white transition-all outline-none"
+                  disabled={loading}
+                  className={`w-full bg-slate-50 border-2 rounded-2xl py-4 px-6 text-2xl font-black tracking-[0.5em] text-center transition-all outline-none ${
+                    error ? 'border-red-400 bg-red-50 text-red-600 focus:border-red-500' : 'border-slate-100 focus:border-primary focus:bg-white'
+                  }`}
                   placeholder="000000"
                   value={otp}
                   onChange={(e) => {
                     const val = e.target.value.replace(/\D/g, '');
                     setOtp(val);
-                    if (val.length === 6 && !loading) {
-                      onVerify(val);
-                    }
                   }}
                 />
               </div>
+              
+              {/* Lively Error Message */}
+              {error && (
+                <div className="flex items-center justify-center gap-2 text-red-500 font-bold text-sm bg-red-50 py-2 px-4 rounded-xl animate-in slide-in-from-top-2 duration-300">
+                  <AlertCircle size={16} />
+                  <span>{error}</span>
+                </div>
+              )}
             </div>
 
             <button
