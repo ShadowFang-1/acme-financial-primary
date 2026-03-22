@@ -68,7 +68,8 @@ const Nav = () => {
 
 const Hero = () => (
   <section className="relative pt-32 pb-20 overflow-hidden min-h-[95vh] flex items-center bg-[#f8fafc]">
-    <div className="absolute inset-0 z-0">
+    <div className="absolute inset-0 z-0 text-slate-100">
+      <div className="absolute top-0 right-0 w-full h-[800px] opacity-10 bg-[url('https://images.unsplash.com/photo-1639762681485-074b7f938ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2832&q=80')] bg-cover bg-center"></div>
       <div className="absolute top-0 right-0 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-secondary/10 blur-[100px] sm:blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 left-0 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-primary/5 blur-[100px] sm:blur-[150px] rounded-full -translate-x-1/2 translate-y-1/2"></div>
     </div>
@@ -78,7 +79,7 @@ const Hero = () => (
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 border border-secondary/20 text-secondary font-black text-[10px] sm:text-xs tracking-widest mb-6 lg:mb-8 mx-auto lg:mx-0 uppercase">
           <Shield size={16} /> SECURE & TRUSTED BANKING
         </div>
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-black font-outfit leading-[1.1] mb-6 lg:mb-8 text-primary tracking-tighter italic">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-black font-poppins leading-[1.1] mb-6 lg:mb-8 text-primary tracking-tighter italic">
           Banking for the <br className="hidden sm:block" /> <span className="text-gradient">Future Generation.</span>
         </h1>
         <p className="text-base sm:text-lg lg:text-xl text-slate-600 mb-8 lg:mb-10 leading-relaxed max-w-xl mx-auto lg:mx-0">
@@ -96,16 +97,22 @@ const Hero = () => (
       
       <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000 mt-12 lg:mt-0">
         <div className="relative z-10 card aspect-video bg-gradient-to-br from-primary to-primary-light flex items-center justify-center p-0 overflow-hidden shadow-2xl animate-float rounded-[2rem] sm:rounded-[4rem]">
-          <div className="flex flex-col items-center text-white/10 scale-75 sm:scale-100">
-            <Landmark size={120} />
-            <p className="mt-4 font-black text-2xl sm:text-4xl tracking-[0.3em] uppercase italic">ACME CORE</p>
+          <img 
+            src="https://images.unsplash.com/photo-1563986768609-322da13575f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80" 
+            className="w-full h-full object-cover opacity-60 mix-blend-overlay" 
+            alt="Hero Graphic" 
+          />
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-white scale-75 sm:scale-100">
+            <Landmark size={80} className="text-secondary mb-4" />
+            <p className="font-black text-2xl sm:text-4xl tracking-[0.3em] uppercase italic drop-shadow-2xl">ACME CORE</p>
+            <div className="mt-2 w-32 h-1 bg-secondary rounded-full"></div>
           </div>
-          <div className="absolute top-4 right-4 sm:top-8 sm:right-8 bg-white/5 border border-white/10 p-4 rounded-3xl backdrop-blur-md hidden sm:block">
-             <div className="w-12 h-2 bg-secondary rounded-full mb-2"></div>
-             <div className="w-8 h-2 bg-white/20 rounded-full"></div>
+          <div className="absolute top-4 right-4 sm:top-8 sm:right-8 bg-white/10 border border-white/20 p-4 rounded-3xl backdrop-blur-xl hidden sm:block">
+             <div className="w-12 h-2 bg-secondary rounded-full mb-2 shadow-lg"></div>
+             <div className="w-8 h-2 bg-white/30 rounded-full"></div>
           </div>
         </div>
-        <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-secondary rounded-[3rem] -z-10 blur-2xl opacity-20 hidden sm:block"></div>
+        <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-secondary rounded-[3rem] -z-10 blur-2xl opacity-30 hidden sm:block"></div>
       </div>
     </div>
   </section>
@@ -116,21 +123,21 @@ const About = () => (
     <div className="max-w-7xl mx-auto px-6">
       <div className="text-center max-w-3xl mx-auto mb-20">
         <h2 className="text-4xl md:text-5xl font-black mb-6 text-primary">Simple. Secure. Powerful.</h2>
-        <p className="text-lg text-slate-500">ACME Financial is built on the pillars of cutting-edge technology and human-centric service.</p>
+        <p className="text-lg text-slate-500 font-medium leading-relaxed">ACME Financial is built on the pillars of cutting-edge technology and human-centric service.</p>
       </div>
       
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid md:grid-cols-3 gap-8 sm:gap-12">
         {[
           { icon: Zap, title: "Instant Transfers", desc: "Send money across accounts in milliseconds with our lightning-fast core banking engine." },
           { icon: Lock, title: "Military Grade Security", desc: "Your assets are protected by multiple layers of encryption and multi-factor authentication." },
           { icon: Globe, title: "Global Access", desc: "Access your funds and manage your finances from anywhere in the world, any time." }
         ].map((item, i) => (
-          <div key={i} className="card group hover:-translate-y-2 duration-300">
-            <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center text-primary mb-8 group-hover:bg-primary group-hover:text-white transition-colors">
+          <div key={i} className="card group hover:-translate-y-2 duration-300 !p-8">
+            <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center text-primary mb-8 group-hover:bg-primary group-hover:text-white transition-all transform group-hover:rotate-6">
               <item.icon size={32} />
             </div>
-            <h3 className="text-2xl font-bold mb-4">{item.title}</h3>
-            <p className="text-slate-500 leading-relaxed">{item.desc}</p>
+            <h3 className="text-2xl font-bold mb-4 tracking-tight">{item.title}</h3>
+            <p className="text-slate-500 leading-relaxed font-medium">{item.desc}</p>
           </div>
         ))}
       </div>
@@ -143,33 +150,42 @@ const Team = () => (
     <div className="max-w-7xl mx-auto px-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8 text-center md:text-left">
         <div className="max-w-2xl">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 text-primary tracking-tighter italic">Led by Pioneers.</h2>
-          <p className="text-base sm:text-lg text-slate-500 font-medium">Meet the visionaries behind the ACME revolution. Our leadership combines decades of experience in traditional finance and disruptive tech.</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 text-primary tracking-tighter italic uppercase underline decoration-secondary decoration-4 underline-offset-8">Led by Pioneers.</h2>
+          <p className="text-base sm:text-lg text-slate-600 font-medium leading-relaxed mt-4 sm:mt-12">Meet the visionaries behind the ACME revolution. Our leadership combines decades of experience in traditional finance and disruptive tech.</p>
         </div>
-        <button className="btn-outline font-black uppercase tracking-widest text-xs py-4 px-8">Join the Team</button>
+        <button className="btn-outline font-black uppercase tracking-widest text-xs py-4 px-8 border-2">Explore the Collective</button>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
         {[
-          { name: "Samuel Obeng", role: "Chief Executive Officer", bio: "Sam is a veteran of the fintech space with 20+ years of experience in global markets." },
-          { name: "Amina Mensah", role: "Head of Operations", bio: "Amina ensures our systems run smoothly and our customers receive world-class service." },
-          { name: "David Tetteh", role: "Chief Technology Officer", bio: "David leads our engineering team, crafting the future of digital banking infrastructure." }
+          { name: "Samuel Obeng", role: "Chief Executive Officer", bio: "Sam is a veteran of the fintech space with 20+ years of experience in global markets.", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80" },
+          { name: "Amina Mensah", role: "Head of Operations", bio: "Amina ensures our systems run smoothly and our customers receive world-class service.", img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=688&q=80" },
+          { name: "David Tetteh", role: "Chief Technology Officer", bio: "David leads our engineering team, crafting the future of digital banking infrastructure.", img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80" }
         ].map((member, i) => (
           <div key={i} className="group">
-            <div className="relative overflow-hidden rounded-[2.5rem] lg:rounded-[40px] mb-8 h-[350px] lg:h-[400px] bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center">
-              <User size={100} className="lg:size-[120px] text-slate-400 opacity-50 group-hover:scale-110 transition-transform duration-700" />
+            <div className="relative overflow-hidden rounded-[2.5rem] lg:rounded-[50px] mb-8 h-[400px] lg:h-[450px] bg-slate-200">
+              <img 
+                src={member.img} 
+                className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105" 
+                alt={member.name} 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="absolute inset-x-0 bottom-0 p-6 lg:p-8 glass m-4 rounded-[2rem] translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
-                <p className="text-xs lg:text-sm text-slate-600 leading-relaxed font-bold italic">"{member.bio}"</p>
+                <p className="text-xs lg:text-sm text-slate-600 leading-relaxed font-bold italic tracking-tight">"{member.bio}"</p>
               </div>
             </div>
-            <h3 className="text-2xl font-black text-primary tracking-tight">{member.name}</h3>
-            <p className="text-secondary font-black tracking-[0.2em] text-[10px] sm:text-xs uppercase mt-1">{member.role}</p>
+            <h3 className="text-2xl lg:text-3xl font-black text-primary tracking-tighter italic uppercase">{member.name}</h3>
+            <div className="flex items-center gap-3 mt-1">
+              <div className="w-8 h-1 bg-secondary rounded-full"></div>
+              <p className="text-secondary font-black tracking-[0.2em] text-[10px] sm:text-xs uppercase">{member.role}</p>
+            </div>
           </div>
         ))}
       </div>
     </div>
   </section>
 );
+
 
 const Mission = () => (
   <section id="mission" className="py-24 bg-primary text-white overflow-hidden relative">
