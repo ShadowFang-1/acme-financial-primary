@@ -69,7 +69,7 @@ const Nav = () => {
 const Hero = () => (
   <section className="relative pt-32 pb-20 overflow-hidden min-h-[95vh] flex items-center bg-[#f8fafc]">
     <div className="absolute inset-0 z-0 text-slate-100">
-      <div className="absolute top-0 right-0 w-full h-[800px] opacity-10 bg-[url('https://images.unsplash.com/photo-1639762681485-074b7f938ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2832&q=80')] bg-cover bg-center"></div>
+      <div className="absolute top-0 right-0 w-full h-[800px] opacity-25 bg-[url('https://images.unsplash.com/photo-1639762681485-074b7f938ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=2832&q=80')] bg-cover bg-center"></div>
       <div className="absolute top-0 right-0 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-secondary/10 blur-[100px] sm:blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 left-0 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-primary/5 blur-[100px] sm:blur-[150px] rounded-full -translate-x-1/2 translate-y-1/2"></div>
     </div>
@@ -158,9 +158,9 @@ const Team = () => (
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
         {[
-          { name: "Samuel Obeng", role: "Chief Executive Officer", bio: "Sam is a veteran of the fintech space with 20+ years of experience in global markets.", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80" },
-          { name: "Amina Mensah", role: "Head of Operations", bio: "Amina ensures our systems run smoothly and our customers receive world-class service.", img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=688&q=80" },
-          { name: "David Tetteh", role: "Chief Technology Officer", bio: "David leads our engineering team, crafting the future of digital banking infrastructure.", img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80" }
+          { name: "Samuel Obeng", role: "Chief Executive Officer", bio: "Sam is a veteran of the fintech space with 20+ years of experience in global markets.", img: "https://images.unsplash.com/photo-1556157382-97eda2d62296?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80" },
+          { name: "Amina Mensah", role: "Head of Operations", bio: "Amina ensures our systems run smoothly and our customers receive world-class service.", img: "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80" },
+          { name: "David Tetteh", role: "Chief Technology Officer", bio: "David leads our engineering team, crafting the future of digital banking infrastructure.", img: "https://images.unsplash.com/photo-1531123897727-8f129e16fd3c?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80" }
         ].map((member, i) => (
           <div key={i} className="group">
             <div className="relative overflow-hidden rounded-[2.5rem] lg:rounded-[50px] mb-8 h-[400px] lg:h-[450px] bg-slate-200">
@@ -185,6 +185,7 @@ const Team = () => (
     </div>
   </section>
 );
+
 
 
 const Mission = () => (
