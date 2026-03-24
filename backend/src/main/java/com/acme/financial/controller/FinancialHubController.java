@@ -43,7 +43,7 @@ public class FinancialHubController {
     @PostMapping("/invest/withdraw")
     public ResponseEntity<Void> withdrawInvestment(
             @AuthenticationPrincipal User user,
-            @RequestParam Long investmentId,
+            @RequestParam(required = false, defaultValue = "0") Long investmentId,
             @RequestParam BigDecimal amount
     ) {
         hubService.withdrawInvestment(user, investmentId, amount);
