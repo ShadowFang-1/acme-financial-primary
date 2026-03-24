@@ -32,8 +32,17 @@ public class BankingController {
     }
 
     @GetMapping("/accounts")
-    public ResponseEntity<List<Account>> getAccounts(@AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(accountService.getAccountsByUser(user));
+    public ResponseEntity<List<Account>> getAccounts(
+            @AuthenticationPrincipal User user,
+            @RequestParam(required = false) AccountType type
+    ) {
+        List<Account> accounts = accountService.getAccountsByUser(user);
+        if (type != null) {
+            accounts = accounts.stream()
+                    .filter(a -> a.getType() == type)
+                    .toList();
+        }
+        return ResponseEntity.ok(accounts);
     }
 
     @Transactional(readOnly = true)

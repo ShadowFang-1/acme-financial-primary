@@ -34,6 +34,9 @@ public class FinancialHubService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getFinancialSummary(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("Authentication required to access ACME Institutional records.");
+        }
         Map<String, Object> summary = new HashMap<>();
         summary.put("savingsGoals", savingsGoalRepository.findByUser_Id(user.getId()));
         summary.put("investments", investmentRepository.findByUser_Id(user.getId()));

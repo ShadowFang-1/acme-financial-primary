@@ -172,15 +172,24 @@ public class AuthService {
         if (!user.isEnabled()) {
             user.setEnabled(true);
             
-            // Create a default account ONLY after first verification
-            Account account = Account.builder()
+            // Create Dual-Asset Foundation after first verification
+            Account savings = Account.builder()
                     .user(user)
                     .accountNumber(generateAccountNumber())
                     .balance(new BigDecimal("1000.00")) 
                     .type(AccountType.SAVINGS)
                     .build();
-            accountRepository.saveAndFlush(account);
-            System.out.println(">>> [REGISTRATION SUCCESS] Account activated: " + user.getUsername());
+            
+            Account investment = Account.builder()
+                    .user(user)
+                    .accountNumber(generateAccountNumber())
+                    .balance(new BigDecimal("100.00")) // Base investment pool
+                    .type(AccountType.INVESTMENT)
+                    .build();
+
+            accountRepository.save(savings);
+            accountRepository.save(investment);
+            System.out.println(">>> [REGISTRATION SUCCESS] Dual accounts activated for: " + user.getUsername());
         }
         repository.saveAndFlush(user);
         System.out.println(">>> [OTP SUCCESS] User verified: " + user.getUsername());

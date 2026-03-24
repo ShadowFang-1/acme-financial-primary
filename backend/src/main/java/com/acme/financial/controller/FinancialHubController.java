@@ -21,31 +21,51 @@ public class FinancialHubController {
 
     @GetMapping("/summary")
     public ResponseEntity<Map<String, Object>> getSummary(@AuthenticationPrincipal User user) {
+        if (user == null) return ResponseEntity.status(401).build();
         return ResponseEntity.ok(hubService.getFinancialSummary(user));
     }
 
+    @PostMapping("/invest")
+    public ResponseEntity<Void> invest(
+            @AuthenticationPrincipal User user,
+            @RequestParam BigDecimal amount
+    ) {
+        hubService.invest(user, amount);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/savings/create")
-    public ResponseEntity<SavingsGoal> createGoal(@AuthenticationPrincipal User user, @RequestBody Map<String, String> body) {
-        String name = body.get("name");
-        BigDecimal target = new BigDecimal(body.get("targetAmount"));
-        String icon = body.get("icon");
+    public ResponseEntity<SavingsGoal> createGoal(
+            @AuthenticationPrincipal User user,
+            @RequestParam String name,
+            @RequestParam BigDecimal target,
+            @RequestParam(required = false) String icon
+    ) {
         return ResponseEntity.ok(hubService.createGoal(user, name, target, icon));
     }
 
     @PostMapping("/loans/apply")
-    public ResponseEntity<Loan> applyForLoan(@AuthenticationPrincipal User user, @RequestBody Map<String, String> body) {
-        BigDecimal amount = new BigDecimal(body.get("amount"));
-        Integer months = Integer.parseInt(body.get("months"));
+    public ResponseEntity<Loan> applyForLoan(
+            @AuthenticationPrincipal User user,
+            @RequestParam BigDecimal amount,
+            @RequestParam Integer months
+    ) {
         return ResponseEntity.ok(hubService.requestLoan(user, amount, months));
     }
 
     @GetMapping("/calculator/compound")
-    public ResponseEntity<Map<String, BigDecimal>> calculateCompound(@RequestParam BigDecimal principal, @RequestParam BigDecimal rate, @RequestParam Integer years) {
-        // Simple formula: A = P(1 + r/n)^(nt)
-        // For simplicity: A = P * (1 + rate)^years
-        BigDecimal base = BigDecimal.ONE.add(rate);
-        BigDecimal result = principal.multiply(base.pow(years));
-        return ResponseEntity.ok(Map.of("futureValue", result));
+    public ResponseEntity<Map<String, String>> calculateCompound(
+            @RequestParam BigDecimal principal, 
+            @RequestParam BigDecimal rate, 
+            @RequestParam Integer years
+    ) {
+        // A = P(1 + r)^t
+        double p = principal.doubleValue();
+        double r = rate.doubleValue();
+        double t = years.doubleValue();
+        double a = p * Math.pow(1 + r, t);
+        
+        return ResponseEntity.ok(Map.of("futureValue", String.format("%.2f", a)));
     }
 
     @PostMapping("/audit/log")
