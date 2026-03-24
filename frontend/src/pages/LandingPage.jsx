@@ -75,7 +75,7 @@ const Hero = () => (
     </div>
     
     <div className="max-w-7xl mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-      <div className="animate-in fade-in slide-in-from-left-8 duration-1000 text-center lg:text-left">
+      <div className="animate-slide-left text-center lg:text-left">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/10 border border-secondary/20 text-secondary font-black text-[10px] sm:text-xs tracking-widest mb-6 lg:mb-8 mx-auto lg:mx-0 uppercase">
           <Shield size={16} /> SECURE & TRUSTED BANKING
         </div>
@@ -95,7 +95,7 @@ const Hero = () => (
         </div>
       </div>
       
-      <div className="relative animate-in fade-in slide-in-from-right-8 duration-1000 mt-12 lg:mt-0">
+      <div className="relative animate-slide-right mt-12 lg:mt-0">
         <div className="relative z-10 card aspect-video bg-gradient-to-br from-primary to-primary-light flex items-center justify-center p-0 overflow-hidden shadow-2xl animate-float rounded-[2rem] sm:rounded-[4rem]">
           <img 
             src="https://images.unsplash.com/photo-1563986768609-322da13575f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80" 

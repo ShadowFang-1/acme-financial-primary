@@ -129,7 +129,7 @@ const Auth = () => {
             <p className="text-slate-400 text-sm mb-6 font-medium tracking-tight">Open your gateway to global finance</p>
             
             {error && !isLogin && (
-              <div className="w-full bg-red-50 text-red-500 p-3 rounded-xl text-xs font-bold mb-4 border border-red-100 animate-in fade-in zoom-in duration-300">
+              <div className="w-full bg-red-50 text-red-500 p-3 rounded-xl text-xs font-bold mb-4 border border-red-100 animate-zoom-custom">
                 {error}
               </div>
             )}

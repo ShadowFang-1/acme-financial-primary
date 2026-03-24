@@ -166,8 +166,36 @@
 }
 
 .right-panel-active .signup-container {
-  @apply translate-x-full opacity-100 z-30 animate-in fade-in duration-1000;
+  @apply translate-x-full opacity-100 z-30;
+  animation: fadeIn 1s ease-in-out forwards;
 }
+
+/* Base Animations for Global Use */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInFromLeft {
+  from { opacity: 0; transform: translateX(-50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInFromRight {
+  from { opacity: 0; transform: translateX(50px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes zoomIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in { animation: fadeIn 1s ease-in-out forwards; }
+.animate-slide-left { animation: slideInFromLeft 1s ease-in-out forwards; }
+.animate-slide-right { animation: slideInFromRight 1s ease-in-out forwards; }
+.animate-zoom-custom { animation: zoomIn 0.5s ease-out forwards; }
+
 
 /* Overlay Section */
 .overlay-container {
