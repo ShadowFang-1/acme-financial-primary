@@ -19,32 +19,40 @@ public class FinancialHubService {
     private final LoanRepository loanRepository;
     private final AuditLogRepository auditLogRepository;
     private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
 
     public FinancialHubService(SavingsGoalRepository savingsGoalRepository,
                                InvestmentRepository investmentRepository,
                                LoanRepository loanRepository,
                                AuditLogRepository auditLogRepository,
-                               AccountRepository accountRepository) {
+                               AccountRepository accountRepository,
+                               UserRepository userRepository) {
         this.savingsGoalRepository = savingsGoalRepository;
         this.investmentRepository = investmentRepository;
         this.loanRepository = loanRepository;
         this.auditLogRepository = auditLogRepository;
         this.accountRepository = accountRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> getFinancialSummary(User user) {
         if (user == null) {
-            throw new IllegalArgumentException("Authentication required to access ACME Institutional records.");
+            throw new RuntimeException("Operational Fault: Institutional link lost. Please re-authenticate.");
         }
+        
+        // Ensure user is managed and Has ID
+        User managedUser = userRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new RuntimeException("Vault Error: Identity not located in current session."));
+
         Map<String, Object> summary = new HashMap<>();
-        summary.put("savingsGoals", savingsGoalRepository.findByUser_Id(user.getId()));
-        summary.put("investments", investmentRepository.findByUser_Id(user.getId()));
-        summary.put("loans", loanRepository.findByUser_Id(user.getId()));
-        summary.put("auditLogs", auditLogRepository.findByUsernameOrderByTimestampDesc(user.getUsername()));
+        summary.put("savingsGoals", savingsGoalRepository.findByUser_Id(managedUser.getId()));
+        summary.put("investments", investmentRepository.findByUser_Id(managedUser.getId()));
+        summary.put("loans", loanRepository.findByUser_Id(managedUser.getId()));
+        summary.put("auditLogs", auditLogRepository.findByUsernameOrderByTimestampDesc(managedUser.getUsername()));
         
         // Total stats
-        BigDecimal totalSavings = savingsGoalRepository.findByUser_Id(user.getId()).stream()
+        BigDecimal totalSavings = savingsGoalRepository.findByUser_Id(managedUser.getId()).stream()
             .map(SavingsGoal::getCurrentAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         summary.put("totalSavingsProgress", totalSavings);
@@ -58,7 +66,10 @@ public class FinancialHubService {
             throw new RuntimeException("Investment amount must be positive");
         }
 
-        List<Account> accounts = accountRepository.findByUser_Id(user.getId());
+        User managedUser = userRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new RuntimeException("Institutional Fault: Capital relocation requires active session matching."));
+
+        List<Account> accounts = accountRepository.findByUser_Id(managedUser.getId());
         Account savings = accounts.stream()
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()
@@ -103,6 +114,15 @@ public class FinancialHubService {
 
     @Transactional
     public Loan requestLoan(User user, BigDecimal amount, Integer months) {
+        // Institutional Credit Check: Minimum $500 total capital required
+        BigDecimal totalBalance = accountRepository.findByUser(user).stream()
+                .map(Account::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        if (totalBalance.compareTo(new BigDecimal("500.00")) < 0) {
+            throw new RuntimeException("Liquidity Insufficient: A $500 total reserve is required to bridge the credit pool. Access the Academy to learn how to accumulate capital first.");
+        }
+
         Loan loan = new Loan();
         loan.setUser(user);
         loan.setPrincipalAmount(amount);

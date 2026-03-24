@@ -225,19 +225,43 @@ const FinancialHub = () => {
                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Portfolio Allocation</p>
                      <h3 className="text-4xl font-black text-primary italic">Strategic Asset Map</h3>
                   </div>
-                  <button onClick={() => setShowInvestModal(true)} className="px-8 py-3 bg-primary text-secondary font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">Capital Relocation</button>
+                  {hubData?.investments?.length > 0 ? (
+                    <button onClick={() => setShowInvestModal(true)} className="px-8 py-3 bg-primary text-secondary font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">Capital Relocation</button>
+                  ) : (
+                    <button 
+                      onClick={async () => {
+                        setLoading(true);
+                        try {
+                          await axios.post('/api/v1/banking/accounts?type=INVESTMENT');
+                          fetchData();
+                          alert("ACME Institutional: Your High-Yield Vault Has been provisioned.");
+                        } catch (err) { alert(err.response?.data?.message || "Operational Error provision vault."); }
+                        finally { setLoading(false); }
+                      }}
+                      className="px-8 py-3 bg-secondary text-primary font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-secondary/20 hover:scale-105 transition-all"
+                    >
+                      Provision Vault
+                    </button>
+                  )}
                </div>
                
                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                   <div className="h-[280px]">
-                     <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                           <Pie data={pieData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                              {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                           </Pie>
-                           <RechartsTooltip />
-                        </PieChart>
-                     </ResponsiveContainer>
+                    {hubData?.investments?.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                         <PieChart>
+                            <Pie data={pieData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                               {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                            </Pie>
+                            <RechartsTooltip />
+                         </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full w-full bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-10 text-center">
+                         <ShieldCheck className="text-slate-200 mb-4" size={48} />
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-loose">No active high-yield assets detected.<br/>Initialize your vault to begin accumulation.</p>
+                      </div>
+                    )}
                   </div>
                   <div className="flex flex-col justify-center space-y-6">
                      {pieData.map((d, i) => (
@@ -288,17 +312,23 @@ const FinancialHub = () => {
 
          {/* Right Column: Intelligence & Actions */}
          <div className="lg:col-span-4 space-y-10">
-            {/* Quick Actions */}
+            {/* Quick Actions & Credit Gate */}
             <section className="bg-secondary/10 p-8 rounded-[3rem] border border-secondary/20">
-               <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-6 italic text-center">Institutional Actions</h4>
+               <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-6 italic text-center">Institutional Credit Hub</h4>
                <div className="grid grid-cols-1 gap-4">
                   <Link to="/bill-pay" className="flex items-center justify-between p-5 bg-white/80 rounded-2xl hover:bg-white transition-all shadow-sm border border-secondary/10 group">
-                     <span className="font-black italic text-xs">Easy-Pay Hub</span>
+                     <div>
+                        <p className="font-black italic text-xs mb-1">Easy-Pay Subscriptions</p>
+                        <p className="text-[8px] font-bold text-slate-400 uppercase">Manage Direct Debits</p>
+                     </div>
                      <ArrowRight size={16} className="text-primary group-hover:translate-x-1 transition-transform" />
                   </Link>
-                  <button onClick={() => setShowLoanModal(true)} className="flex items-center justify-between p-5 bg-primary text-secondary rounded-2xl hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">
-                     <span className="font-black italic text-xs uppercase tracking-widest">Institutional Credit</span>
-                     <CreditCard size={18} />
+                  <button onClick={() => setShowLoanModal(true)} className="flex items-center justify-between p-6 bg-primary text-secondary rounded-2xl hover:scale-[1.02] transition-all shadow-xl shadow-primary/20 group">
+                     <div>
+                        <p className="font-black italic text-xs mb-1 uppercase tracking-widest">Request Unsecured Capital</p>
+                        <p className="text-[8px] font-black text-secondary/60 uppercase">Institutional Credit Authorization</p>
+                     </div>
+                     <Banknote size={20} className="group-hover:rotate-12 transition-transform"/>
                   </button>
                </div>
             </section>

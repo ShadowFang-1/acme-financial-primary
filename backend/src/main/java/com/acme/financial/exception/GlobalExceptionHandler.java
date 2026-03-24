@@ -52,7 +52,8 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
         ex.printStackTrace(); 
+        String detail = "Institutional Fault: " + (ex.getMessage() != null ? ex.getMessage() : "Unknown");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ErrorResponse("An unexpected internal error occurred. Our team has been notified.", "INTERNAL_ERROR"));
+            .body(new ErrorResponse(detail, "INTERNAL_ERROR"));
     }
 }
