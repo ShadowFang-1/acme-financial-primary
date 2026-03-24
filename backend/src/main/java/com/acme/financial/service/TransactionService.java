@@ -44,12 +44,12 @@ public class TransactionService {
         User recipient = recipients.get(0);
 
         // 2. Find Senders Primary Account
-        Account fromAccount = accountRepository.findByUserId(sender.getId()).stream()
+        Account fromAccount = accountRepository.findByUser_Id(sender.getId()).stream()
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Your primary account is not accessible"));
 
         // 3. Find Recipients Primary Account
-        Account toAccount = accountRepository.findByUserId(recipient.getId()).stream()
+        Account toAccount = accountRepository.findByUser_Id(recipient.getId()).stream()
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Recipient has no active Zenith accounts"));
 

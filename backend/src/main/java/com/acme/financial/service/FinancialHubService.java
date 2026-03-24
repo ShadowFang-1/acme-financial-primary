@@ -30,13 +30,13 @@ public class FinancialHubService {
     @Transactional(readOnly = true)
     public Map<String, Object> getFinancialSummary(User user) {
         Map<String, Object> summary = new HashMap<>();
-        summary.put("savingsGoals", savingsGoalRepository.findByUserId(user.getId()));
-        summary.put("investments", investmentRepository.findByUserId(user.getId()));
-        summary.put("loans", loanRepository.findByUserId(user.getId()));
+        summary.put("savingsGoals", savingsGoalRepository.findByUser_Id(user.getId()));
+        summary.put("investments", investmentRepository.findByUser_Id(user.getId()));
+        summary.put("loans", loanRepository.findByUser_Id(user.getId()));
         summary.put("auditLogs", auditLogRepository.findByUsernameOrderByTimestampDesc(user.getUsername()));
         
         // Total stats
-        BigDecimal totalSavings = savingsGoalRepository.findByUserId(user.getId()).stream()
+        BigDecimal totalSavings = savingsGoalRepository.findByUser_Id(user.getId()).stream()
             .map(SavingsGoal::getCurrentAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         summary.put("totalSavingsProgress", totalSavings);
