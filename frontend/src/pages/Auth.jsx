@@ -125,6 +125,9 @@ const Auth = () => {
         {/* Register Container */}
         <div className="form-container signup-container">
           <form onSubmit={handleRegisterSubmit} className="auth-form overflow-y-auto custom-scrollbar">
+            <div className="sm:hidden mb-6 overflow-hidden rounded-2xl">
+               <Logo iconSize={24} textSize="text-2xl" />
+            </div>
             <h1 className="text-3xl font-black text-primary italic mb-2 tracking-tighter">Join the Elite</h1>
             <p className="text-slate-400 text-sm mb-6 font-medium tracking-tight">Open your gateway to global finance</p>
             
@@ -190,7 +193,7 @@ const Auth = () => {
               )}
             </button>
             
-            <button type="button" onClick={toggleAuth} className="sm:hidden mt-6 text-sm font-bold text-primary italic uppercase tracking-widest">
+            <button type="button" onClick={toggleAuth} className="sm:hidden mt-8 py-3 px-8 rounded-xl border-2 border-slate-100 text-xs font-black text-primary italic uppercase tracking-widest hover:bg-slate-50 transition-all">
               Already a member? Sign In
             </button>
           </form>
@@ -236,7 +239,7 @@ const Auth = () => {
               )}
             </button>
 
-            <button type="button" onClick={toggleAuth} className="sm:hidden mt-10 text-sm font-bold text-primary italic uppercase tracking-widest">
+            <button type="button" onClick={toggleAuth} className="sm:hidden mt-10 py-3 px-8 rounded-xl border-2 border-slate-100 text-xs font-black text-primary italic uppercase tracking-widest hover:bg-slate-50 transition-all">
                New here? Create Account
             </button>
           </form>

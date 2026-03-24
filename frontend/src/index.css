@@ -251,9 +251,41 @@
 
 @media (max-width: 640px) {
   .auth-card-wrapper {
-    @apply min-h-[550px] rounded-[2.5rem];
+    @apply min-h-0 h-auto rounded-[2rem] shadow-2xl;
+    display: flex;
+    flex-direction: column;
   }
-  .signin-container, .signup-container {
-    @apply w-full;
+
+  .form-container {
+    @apply relative w-full h-auto opacity-100 translate-x-0 transition-none;
+    display: none;
+  }
+
+  /* Show only the relevant form on mobile */
+  .signin-container {
+    display: flex;
+  }
+  .signup-container {
+    display: none;
+  }
+
+  .right-panel-active .signin-container {
+    display: none;
+  }
+  .right-panel-active .signup-container {
+    display: flex;
+    @apply translate-x-0 opacity-100;
+  }
+
+  .auth-form {
+    @apply px-6 py-8 h-auto;
+  }
+
+  .auth-input-group {
+    @apply p-3;
+  }
+
+  .auth-btn-main {
+    @apply py-3 text-xs;
   }
 }
