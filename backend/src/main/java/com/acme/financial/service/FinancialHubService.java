@@ -20,28 +20,32 @@ public class FinancialHubService {
     private final AuditLogRepository auditLogRepository;
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final TransactionRepository transactionRepository;
+    private final NotificationService notificationService;
+    private final EmailService emailService;
 
     public FinancialHubService(SavingsGoalRepository savingsGoalRepository,
                                InvestmentRepository investmentRepository,
                                LoanRepository loanRepository,
                                AuditLogRepository auditLogRepository,
                                AccountRepository accountRepository,
-                               UserRepository userRepository) {
+                               UserRepository userRepository,
+                               TransactionRepository transactionRepository,
+                               NotificationService notificationService,
+                               EmailService emailService) {
         this.savingsGoalRepository = savingsGoalRepository;
         this.investmentRepository = investmentRepository;
         this.loanRepository = loanRepository;
         this.auditLogRepository = auditLogRepository;
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
+        this.transactionRepository = transactionRepository;
+        this.notificationService = notificationService;
+        this.emailService = emailService;
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> getFinancialSummary(User user) {
-        if (user == null) {
-            throw new RuntimeException("Operational Fault: Institutional link lost. Please re-authenticate.");
-        }
-        
-        // Ensure user is managed and Has ID
         User managedUser = userRepository.findByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("Vault Error: Identity not located in current session."));
 
@@ -51,7 +55,6 @@ public class FinancialHubService {
         summary.put("loans", loanRepository.findByUser_Id(managedUser.getId()));
         summary.put("auditLogs", auditLogRepository.findByUsernameOrderByTimestampDesc(managedUser.getUsername()));
         
-        // Total stats
         BigDecimal totalSavings = savingsGoalRepository.findByUser_Id(managedUser.getId()).stream()
             .map(SavingsGoal::getCurrentAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -74,38 +77,48 @@ public class FinancialHubService {
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Vault Error: No source Savings account identified."));
-
-        if (savings.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Liquidity Insufficient: Savings reserve is below the relocation threshold.");
-        }
-
+        
         Account investmentAcc = accounts.stream()
             .filter(a -> a.getType() == AccountType.INVESTMENT)
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Operational Limit: Initialize your High-Yield Vault first."));
+            .orElseThrow(() -> new RuntimeException("Operational Fault: No ACME Investment account located. Please open one first."));
 
-        // Deduct from Savings
+        if (savings.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient Liquidity: Your Savings account does not have enough capital.");
+        }
+
         savings.setBalance(savings.getBalance().subtract(amount));
-        accountRepository.save(savings);
-
-        // Add to Managed Investment Account
         investmentAcc.setBalance(investmentAcc.getBalance().add(amount));
+        accountRepository.save(savings);
         accountRepository.save(investmentAcc);
 
-        // Record in Asset Map
+        // Record for tracking
         Investment inv = new Investment();
         inv.setUser(managedUser);
-        inv.setAmount(amount);
         inv.setAssetName("ACME Strategic Yield Portfolio");
         inv.setAssetType("HIGH_YIELD_INSTITUTIONAL");
-        inv.setStatus("GROWING");
+        inv.setAmount(amount);
         inv.setGrowthInterval(interval != null ? interval : "MONTHLY");
         inv.setInterestRate(interval != null && interval.equals("ANNUALLY") ? new BigDecimal("12.0") : new BigDecimal("5.0"));
+        inv.setStatus("GROWING");
         inv.setLastUpdated(LocalDateTime.now());
         investmentRepository.save(inv);
 
-        recordAction("ASSET_RELOCATION", managedUser.getUsername(), 
-            "Relocated " + amount + " to " + inv.getGrowthInterval() + " yield portfolio.", "INTERNAL_ENGINE");
+        // Record Transaction History
+        Transaction trans = Transaction.builder()
+            .senderAccount(savings)
+            .receiverAccount(investmentAcc)
+            .amount(amount)
+            .description("Capital Relocation to " + inv.getGrowthInterval() + " Yield Portfolio")
+            .type(TransactionType.TRANSFER)
+            .build();
+        transactionRepository.save(trans);
+
+        // Notify
+        String logMsg = "Invested " + amount + " into ACME High-Yield (" + inv.getGrowthInterval() + ")";
+        notificationService.notify(managedUser, "Wealth Hub: Investment Successful", logMsg);
+        emailService.sendEmail(managedUser.getEmail(), "ACME Financial Hub: Investment Alert", logMsg);
+        recordAction("ASSET_INVEST", managedUser.getUsername(), logMsg, "INTERNAL_SYSTEM");
     }
 
     @Transactional
@@ -113,27 +126,41 @@ public class FinancialHubService {
         User managedUser = userRepository.findByEmail(user.getEmail())
                 .orElseThrow(() -> new RuntimeException("Institutional Fault: Session not located."));
 
-        Account investmentAcc = accountRepository.findByUser(managedUser).stream()
+        List<Account> accounts = accountRepository.findByUser(managedUser);
+        Account investmentAcc = accounts.stream()
             .filter(a -> a.getType() == AccountType.INVESTMENT)
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Vault Error: No active Investment vault identified."));
+            .orElseThrow(() -> new RuntimeException("Vault Error: No Investment vault identified."));
 
         if (investmentAcc.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Liquidity Insufficient: Investment balance too low for withdrawal.");
+            throw new RuntimeException("Liquidity Insufficient: Investment balance too low.");
         }
 
-        Account savings = accountRepository.findByUser(managedUser).stream()
+        Account savings = accounts.stream()
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Vault Error: No primary Savings account to receive liquidity."));
+            .orElseThrow(() -> new RuntimeException("Vault Error: No primary Savings account identified."));
 
         investmentAcc.setBalance(investmentAcc.getBalance().subtract(amount));
         savings.setBalance(savings.getBalance().add(amount));
-        
         accountRepository.save(investmentAcc);
         accountRepository.save(savings);
 
-        recordAction("INVESTMENT_LIQUIDATION", managedUser.getUsername(), "Withdrew " + amount + " from investment to savings.", "INTERNAL_ENGINE");
+        // Transaction History
+        Transaction trans = Transaction.builder()
+            .senderAccount(investmentAcc)
+            .receiverAccount(savings)
+            .amount(amount)
+            .description("Investment Liquidation to Savings")
+            .type(TransactionType.TRANSFER)
+            .build();
+        transactionRepository.save(trans);
+
+        // Notify
+        String logMsg = "Liquidated " + amount + " from Investment back to Savings.";
+        notificationService.notify(managedUser, "Wealth Hub: Asset Liquidated", logMsg);
+        emailService.sendEmail(managedUser.getEmail(), "ACME Financial Hub: Liquidation Alert", logMsg);
+        recordAction("ASSET_WITHDRAW", managedUser.getUsername(), logMsg, "INTERNAL_SYSTEM");
     }
 
     @Transactional
@@ -147,30 +174,41 @@ public class FinancialHubService {
         Account savings = accountRepository.findByUser(managedUser).stream()
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Vault Error: No primary Savings account identified for debt clearance."));
+            .orElseThrow(() -> new RuntimeException("Vault Error: No source account to clear debt."));
 
         if (savings.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Liquidity Insufficient: Savings balance cannot cover this debt repayment.");
+            throw new RuntimeException("Liquidity Insufficient: Savings balance too low for repayment.");
         }
 
         savings.setBalance(savings.getBalance().subtract(amount));
         loan.setRemainingBalance(loan.getRemainingBalance().subtract(amount));
-        
         if (loan.getRemainingBalance().compareTo(BigDecimal.ZERO) <= 0) {
             loan.setStatus("COMPLETED");
             loan.setRemainingBalance(BigDecimal.ZERO);
         }
-
         accountRepository.save(savings);
         loanRepository.save(loan);
 
-        recordAction("DEBT_CLEARANCE", managedUser.getUsername(), "Paid " + amount + " towards loan principal.", "CREDIT_POOL");
+        // Transaction History
+        Transaction trans = Transaction.builder()
+            .senderAccount(savings)
+            .amount(amount)
+            .description("Repayment for Loan L-" + (loan.getId() % 1000))
+            .type(TransactionType.WITHDRAWAL)
+            .build();
+        transactionRepository.save(trans);
+
+        // Notify
+        String logMsg = "Paid " + amount + " towards Loan L-" + (loan.getId() % 1000);
+        notificationService.notify(managedUser, "Credit Hub: Debt Repayment", logMsg);
+        emailService.sendEmail(managedUser.getEmail(), "ACME Financial Hub: Debt Payment Alert", logMsg);
+        recordAction("DEBT_PAYMENT", managedUser.getUsername(), logMsg, "CREDIT_POOL");
     }
 
     @Transactional
     public SavingsGoal createGoal(User user, String name, BigDecimal target, String icon) {
         User managedUser = userRepository.findByEmail(user.getEmail())
-                .orElseThrow(() -> new RuntimeException("Operational Fault: Session integrity failed."));
+                .orElseThrow(() -> new RuntimeException("Institutional Fault: Session integrity failed."));
 
         SavingsGoal goal = new SavingsGoal();
         goal.setUser(managedUser);
@@ -186,15 +224,14 @@ public class FinancialHubService {
     @Transactional
     public Loan requestLoan(User user, BigDecimal amount, Integer months) {
         User managedUser = userRepository.findByEmail(user.getEmail())
-                .orElseThrow(() -> new RuntimeException("Operational Fault: Session integrity failed."));
+                .orElseThrow(() -> new RuntimeException("Institutional Fault: Session integrity failed."));
 
-        // Institutional Credit Check: Minimum $500 total capital required
         BigDecimal totalBalance = accountRepository.findByUser(managedUser).stream()
                 .map(Account::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         if (totalBalance.compareTo(new BigDecimal("500.00")) < 0) {
-            throw new RuntimeException("Liquidity Insufficient: A $500 total reserve is required for credit authorization. Consult Academy for accumulation strategies.");
+            throw new RuntimeException("Liquidity Insufficient: A $500 total reserve is required for credit authorization.");
         }
 
         Loan loan = new Loan();
@@ -205,8 +242,8 @@ public class FinancialHubService {
         loan.setStartDate(LocalDateTime.now());
         loan.setDurationInMonths(months);
         loan.setStatus("ACTIVE");
-        
-        // CREDIT THE SAVINGS ACCOUNT
+        Loan savedLoan = loanRepository.save(loan);
+
         Account savings = accountRepository.findByUser(managedUser).stream()
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()
@@ -215,8 +252,22 @@ public class FinancialHubService {
         savings.setBalance(savings.getBalance().add(amount));
         accountRepository.save(savings);
 
-        recordAction("CREDIT_AUTHORIZED", managedUser.getUsername(), "Loan of " + amount + " authorized and credited to Savings vault.", "CREDIT_POOL");
-        return loanRepository.save(loan);
+        // Transaction History
+        Transaction trans = Transaction.builder()
+            .receiverAccount(savings)
+            .amount(amount)
+            .description("Institutional Loan Disbursement L-" + (savedLoan.getId() % 1000))
+            .type(TransactionType.DEPOSIT)
+            .build();
+        transactionRepository.save(trans);
+
+        // Notify
+        String logMsg = "Loan of " + amount + " authorized and credited to Savings vault.";
+        notificationService.notify(managedUser, "Credit Hub: Loan Authorized", logMsg);
+        emailService.sendEmail(managedUser.getEmail(), "ACME Financial Hub: Loan Alert", logMsg);
+        recordAction("CREDIT_AUTHORIZED", managedUser.getUsername(), logMsg, "CREDIT_POOL");
+        
+        return savedLoan;
     }
 
     @Transactional
