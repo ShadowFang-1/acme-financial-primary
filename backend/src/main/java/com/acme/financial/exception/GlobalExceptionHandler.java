@@ -43,17 +43,20 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException.class)
+    @Transactional
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
-        ex.printStackTrace(); // Dev tracing
+        ex.printStackTrace(); // Core System Logs
+        String message = ex.getMessage() != null ? ex.getMessage() : "Institutional Execution Fault";
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ErrorResponse("Operational Failure: " + (ex.getMessage() != null ? ex.getMessage() : "Execution error"), "RUNTIME_ERROR"));
+            .body(new ErrorResponse("System Fault: " + message, "RUNTIME_FAILURE"));
     }
 
     @ExceptionHandler(Exception.class)
+    @Transactional
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
         ex.printStackTrace(); 
-        String detail = "Institutional Fault: " + (ex.getMessage() != null ? ex.getMessage() : "Unknown");
+        String detail = "Institutional Integrity Fault: " + (ex.getMessage() != null ? ex.getMessage() : "Unknown Handshake Failure");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ErrorResponse(detail, "INTERNAL_ERROR"));
+            .body(new ErrorResponse(detail, "SYSTEM_FAILURE"));
     }
 }

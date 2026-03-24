@@ -69,6 +69,8 @@ const FinancialHub = () => {
       setHubData(res.data);
     } catch (err) {
       console.error("Hub Error:", err);
+      const msg = err.response?.data?.message || "Operational Fault: High-Yield Summary Unavailable. Check session status.";
+      alert(msg);
     } finally {
       setLoading(false);
     }
