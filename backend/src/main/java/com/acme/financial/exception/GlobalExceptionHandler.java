@@ -44,9 +44,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
-        ex.printStackTrace(); 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-            .body(new ErrorResponse(ex.getMessage() != null ? ex.getMessage() : "Execution error", "RUNTIME_ERROR"));
+        ex.printStackTrace(); // Dev tracing
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(new ErrorResponse("Operational Failure: " + (ex.getMessage() != null ? ex.getMessage() : "Execution error"), "RUNTIME_ERROR"));
     }
 
     @ExceptionHandler(Exception.class)
