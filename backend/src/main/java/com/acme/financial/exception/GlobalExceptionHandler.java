@@ -43,7 +43,6 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    @Transactional
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
         ex.printStackTrace(); // Core System Logs
         String message = ex.getMessage() != null ? ex.getMessage() : "Institutional Execution Fault";
@@ -52,7 +51,6 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    @Transactional
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
         ex.printStackTrace(); 
         String detail = "Institutional Integrity Fault: " + (ex.getMessage() != null ? ex.getMessage() : "Unknown Handshake Failure");
