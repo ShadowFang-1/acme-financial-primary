@@ -1,6 +1,6 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Auth from './pages/Auth';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminStats from './pages/AdminStats';
@@ -44,8 +44,9 @@ function App() {
         <AuthProvider>
           <RestorationManager>
             <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
+              <Route path="/login" element={<Auth />} />
+              <Route path="/register" element={<Auth />} />
+
               <Route path="/forgot-password" element={<ForgotPassword />} />
               
               <Route path="/dashboard" element={
