@@ -28,9 +28,30 @@ public class FinancialHubController {
     @PostMapping("/invest")
     public ResponseEntity<Void> invest(
             @AuthenticationPrincipal User user,
+            @RequestParam BigDecimal amount,
+            @RequestParam(defaultValue = "MONTHLY") String interval
+    ) {
+        hubService.invest(user, amount, interval);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/invest/withdraw")
+    public ResponseEntity<Void> withdrawInvestment(
+            @AuthenticationPrincipal User user,
+            @RequestParam Long investmentId,
             @RequestParam BigDecimal amount
     ) {
-        hubService.invest(user, amount);
+        hubService.withdrawInvestment(user, investmentId, amount);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/loans/pay")
+    public ResponseEntity<Void> payOffLoan(
+            @AuthenticationPrincipal User user,
+            @RequestParam Long loanId,
+            @RequestParam BigDecimal amount
+    ) {
+        hubService.payOffLoan(user, loanId, amount);
         return ResponseEntity.ok().build();
     }
 

@@ -16,9 +16,11 @@ public class Investment {
     private User user;
 
     private String assetName; 
-    private String assetType; // e.g., "Mutual Fund", "Crypto", "High-Yield"
+    private String assetType;
     private BigDecimal amount;
-    private String status; // "GROWING", "STABLE"
+    private String status; 
+    private String growthInterval; // "MONTHLY", "ANNUALLY"
+    private BigDecimal interestRate; // 5.0, 12.0 etc
     private LocalDateTime lastUpdated;
 
     public Investment() {}
@@ -35,6 +37,10 @@ public class Investment {
     public void setAmount(BigDecimal amount) { this.amount = amount; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getGrowthInterval() { return growthInterval; }
+    public void setGrowthInterval(String growthInterval) { this.growthInterval = growthInterval; }
+    public BigDecimal getInterestRate() { return interestRate; }
+    public void setInterestRate(BigDecimal interestRate) { this.interestRate = interestRate; }
     public LocalDateTime getLastUpdated() { return lastUpdated; }
     public void setLastUpdated(LocalDateTime lastUpdated) { this.lastUpdated = lastUpdated; }
 }

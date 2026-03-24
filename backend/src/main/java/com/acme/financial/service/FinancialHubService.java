@@ -61,44 +61,110 @@ public class FinancialHubService {
     }
 
     @Transactional
-    public void invest(User user, BigDecimal amount) {
+    public void invest(User user, BigDecimal amount, String interval) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Investment amount must be positive");
+            throw new RuntimeException("Operational Fault: Investment amount must be positive.");
         }
 
         User managedUser = userRepository.findByEmail(user.getEmail())
-                .orElseThrow(() -> new RuntimeException("Institutional Fault: Capital relocation requires active session matching."));
+                .orElseThrow(() -> new RuntimeException("Institutional Fault: Session not located."));
 
-        List<Account> accounts = accountRepository.findByUser_Id(managedUser.getId());
+        List<Account> accounts = accountRepository.findByUser(managedUser);
         Account savings = accounts.stream()
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Operational Fault: No ACME Savings account located to source funds."));
-        
+            .orElseThrow(() -> new RuntimeException("Vault Error: No source Savings account identified."));
+
+        if (savings.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Liquidity Insufficient: Savings reserve is below the relocation threshold.");
+        }
+
         Account investmentAcc = accounts.stream()
             .filter(a -> a.getType() == AccountType.INVESTMENT)
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Operational Fault: No ACME Investment account located. Please open one first."));
+            .orElseThrow(() -> new RuntimeException("Operational Limit: Initialize your High-Yield Vault first."));
+
+        // Deduct from Savings
+        savings.setBalance(savings.getBalance().subtract(amount));
+        accountRepository.save(savings);
+
+        // Add to Managed Investment Account
+        investmentAcc.setBalance(investmentAcc.getBalance().add(amount));
+        accountRepository.save(investmentAcc);
+
+        // Record in Asset Map
+        Investment inv = new Investment();
+        inv.setUser(managedUser);
+        inv.setAmount(amount);
+        inv.setAssetName("ACME Strategic Yield Portfolio");
+        inv.setAssetType("HIGH_YIELD_INSTITUTIONAL");
+        inv.setStatus("GROWING");
+        inv.setGrowthInterval(interval != null ? interval : "MONTHLY");
+        inv.setInterestRate(interval != null && interval.equals("ANNUALLY") ? new BigDecimal("12.0") : new BigDecimal("5.0"));
+        inv.setLastUpdated(LocalDateTime.now());
+        investmentRepository.save(inv);
+
+        recordAction("ASSET_RELOCATION", managedUser.getUsername(), 
+            "Relocated " + amount + " to " + inv.getGrowthInterval() + " yield portfolio.", "INTERNAL_ENGINE");
+    }
+
+    @Transactional
+    public void withdrawInvestment(User user, Long investmentId, BigDecimal amount) {
+        User managedUser = userRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new RuntimeException("Institutional Fault: Session not located."));
+
+        Account investmentAcc = accountRepository.findByUser(managedUser).stream()
+            .filter(a -> a.getType() == AccountType.INVESTMENT)
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Vault Error: No active Investment vault identified."));
+
+        if (investmentAcc.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Liquidity Insufficient: Investment balance too low for withdrawal.");
+        }
+
+        Account savings = accountRepository.findByUser(managedUser).stream()
+            .filter(a -> a.getType() == AccountType.SAVINGS)
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Vault Error: No primary Savings account to receive liquidity."));
+
+        investmentAcc.setBalance(investmentAcc.getBalance().subtract(amount));
+        savings.setBalance(savings.getBalance().add(amount));
+        
+        accountRepository.save(investmentAcc);
+        accountRepository.save(savings);
+
+        recordAction("INVESTMENT_LIQUIDATION", managedUser.getUsername(), "Withdrew " + amount + " from investment to savings.", "INTERNAL_ENGINE");
+    }
+
+    @Transactional
+    public void payOffLoan(User user, Long loanId, BigDecimal amount) {
+        User managedUser = userRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new RuntimeException("Institutional Fault: Session not located."));
+
+        Loan loan = loanRepository.findById(loanId)
+                .orElseThrow(() -> new RuntimeException("Operational Fault: Loan instrument not found."));
+
+        Account savings = accountRepository.findByUser(managedUser).stream()
+            .filter(a -> a.getType() == AccountType.SAVINGS)
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Vault Error: No primary Savings account identified for debt clearance."));
 
         if (savings.getBalance().compareTo(amount) < 0) {
-            throw new RuntimeException("Insufficient Liquidity: Your Savings account does not Have enough capital.");
+            throw new RuntimeException("Liquidity Insufficient: Savings balance cannot cover this debt repayment.");
         }
 
         savings.setBalance(savings.getBalance().subtract(amount));
-        investmentAcc.setBalance(investmentAcc.getBalance().add(amount));
+        loan.setRemainingBalance(loan.getRemainingBalance().subtract(amount));
+        
+        if (loan.getRemainingBalance().compareTo(BigDecimal.ZERO) <= 0) {
+            loan.setStatus("COMPLETED");
+            loan.setRemainingBalance(BigDecimal.ZERO);
+        }
 
         accountRepository.save(savings);
-        accountRepository.save(investmentAcc);
+        loanRepository.save(loan);
 
-        // Record for tracking
-        Investment inv = new Investment();
-        inv.setUser(user);
-        inv.setAmount(amount);
-        inv.setAssetType("ACME_HIGH_YIELD_FUNDS");
-        inv.setStatus("GROWING");
-        investmentRepository.save(inv);
-
-        auditLogRepository.save(new AuditLog("ASSET_INVEST", user.getUsername(), "Invested $" + amount + " from savings", "Internal"));
+        recordAction("DEBT_CLEARANCE", managedUser.getUsername(), "Paid " + amount + " towards loan principal.", "CREDIT_POOL");
     }
 
     @Transactional

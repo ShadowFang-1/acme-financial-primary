@@ -47,6 +47,14 @@ const FinancialHub = () => {
 
   const [showInvestModal, setShowInvestModal] = useState(false);
   const [investAmount, setInvestAmount] = useState('');
+  const [investInterval, setInvestInterval] = useState('MONTHLY');
+
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawAmount, setWithdrawAmount] = useState('');
+  
+  const [showPayLoanModal, setShowPayLoanModal] = useState(false);
+  const [payLoanAmount, setPayLoanAmount] = useState('');
+  const [selectedLoanId, setSelectedLoanId] = useState(null);
 
   const [showAcademy, setShowAcademy] = useState(false);
   const [showTradeSandbox, setShowTradeSandbox] = useState(false);
@@ -87,7 +95,7 @@ const FinancialHub = () => {
       setShowLoanModal(false);
       setLoanAmount('');
       alert("Credit Approved!");
-    } catch (err) { alert("Loan declinded."); }
+    } catch (err) { alert(err.response?.data?.message || "Loan declined."); }
     finally { setLoading(false); }
   };
 
@@ -95,12 +103,38 @@ const FinancialHub = () => {
     if (!investAmount) return;
     setLoading(true);
     try {
-      await axios.post('/api/v1/hub/invest', null, { params: { amount: investAmount } });
+      await axios.post('/api/v1/hub/invest', null, { params: { amount: investAmount, interval: investInterval } });
       fetchData();
       setShowInvestModal(false);
       setInvestAmount('');
-      alert("Investment Successful!");
+      alert(`Investment Successful! Your wealth is now growing ${investInterval.toLowerCase()}.`);
     } catch (err) { alert(err.response?.data?.message || "Investment failed."); }
+    finally { setLoading(false); }
+  };
+
+  const handleWithdrawInvestment = async () => {
+    if (!withdrawAmount) return;
+    setLoading(true);
+    try {
+      await axios.post('/api/v1/hub/invest/withdraw', null, { params: { amount: withdrawAmount } });
+      fetchData();
+      setShowWithdrawModal(false);
+      setWithdrawAmount('');
+      alert("Capital Liquefied back to Savings!");
+    } catch (err) { alert(err.response?.data?.message || "Withdrawal failed."); }
+    finally { setLoading(false); }
+  };
+
+  const handlePayLoan = async () => {
+    if (!payLoanAmount || !selectedLoanId) return;
+    setLoading(true);
+    try {
+      await axios.post('/api/v1/hub/loans/pay', null, { params: { loanId: selectedLoanId, amount: payLoanAmount } });
+      fetchData();
+      setShowPayLoanModal(false);
+      setPayLoanAmount('');
+      alert("Debt Repayment Successful!");
+    } catch (err) { alert(err.response?.data?.message || "Payment failed."); }
     finally { setLoading(false); }
   };
 
@@ -192,11 +226,56 @@ const FinancialHub = () => {
         <div className="fixed inset-0 bg-primary/20 backdrop-blur-md z-[200] flex items-center justify-center p-6">
            <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] text-center shadow-3xl">
               <h3 className="text-xl font-black mb-2 italic">Acquire High-Yield Assets</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Move Capital from Savings</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Move Capital from Savings</p>
+              
+              <div className="flex gap-2 mb-6">
+                 {['MONTHLY', 'ANNUALLY'].map(interval => (
+                    <button 
+                       key={interval} 
+                       onClick={() => setInvestInterval(interval)} 
+                       className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border-2 transition-all ${
+                          investInterval === interval ? 'bg-primary text-secondary border-primary' : 'bg-slate-50 text-slate-400 border-slate-100'
+                       }`}
+                    >
+                       {interval}
+                    </button>
+                 ))}
+              </div>
+              
               <input type="number" value={investAmount} onChange={e => setInvestAmount(e.target.value)} className="w-full p-6 bg-slate-50 border-2 rounded-2xl text-3xl font-black text-center mb-8" placeholder="0.00" />
               <div className="grid grid-cols-2 gap-4">
                  <button onClick={() => setShowInvestModal(false)} className="py-4 bg-slate-100 font-black rounded-xl uppercase text-xs">Cancel</button>
                  <button onClick={handleInvest} className="py-4 bg-primary text-white font-black rounded-xl uppercase text-xs">Invest Now</button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Withdraw Modal */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 bg-red-500/10 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+           <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] text-center shadow-3xl">
+              <h3 className="text-xl font-black mb-2 italic">Liquify Assets</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 text-red-500">Move Capital to Savings</p>
+              <input type="number" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} className="w-full p-6 bg-slate-50 border-2 rounded-2xl text-3xl font-black text-center mb-8" placeholder="0.00" />
+              <div className="grid grid-cols-2 gap-4">
+                 <button onClick={() => setShowWithdrawModal(false)} className="py-4 bg-slate-100 font-black rounded-xl uppercase text-xs">Cancel</button>
+                 <button onClick={handleWithdrawInvestment} className="py-4 bg-red-500 text-white font-black rounded-xl uppercase text-xs">Withdraw</button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Pay Loan Modal */}
+      {showPayLoanModal && (
+        <div className="fixed inset-0 bg-emerald-500/10 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+           <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] text-center shadow-3xl">
+              <h3 className="text-xl font-black mb-2 italic">Clear Institutional Debt</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Repay from Savings Account</p>
+              <input type="number" value={payLoanAmount} onChange={e => setPayLoanAmount(e.target.value)} className="w-full p-6 bg-slate-50 border-2 rounded-2xl text-3xl font-black text-center mb-8" placeholder="0.00" />
+              <div className="grid grid-cols-2 gap-4">
+                 <button onClick={() => setShowPayLoanModal(false)} className="py-4 bg-slate-100 font-black rounded-xl uppercase text-xs">Abort</button>
+                 <button onClick={handlePayLoan} className="py-4 bg-emerald-600 text-white font-black rounded-xl uppercase text-xs">Execute Payment</button>
               </div>
            </div>
         </div>
@@ -244,7 +323,10 @@ const FinancialHub = () => {
                      <h3 className="text-4xl font-black text-primary italic">Strategic Asset Map</h3>
                   </div>
                   {hubData?.investments?.length > 0 ? (
-                    <button onClick={() => setShowInvestModal(true)} className="px-8 py-3 bg-primary text-secondary font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">Capital Relocation</button>
+                    <div className="flex gap-3">
+                       <button onClick={() => setShowWithdrawModal(true)} className="px-6 py-3 bg-red-50 text-red-600 font-black rounded-2xl text-[10px] uppercase tracking-widest border border-red-100 hover:bg-red-100 transition-all">Liquify</button>
+                       <button onClick={() => setShowInvestModal(true)} className="px-8 py-3 bg-primary text-secondary font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">Relocation</button>
+                    </div>
                   ) : (
                     <button 
                       onClick={async () => {
@@ -295,35 +377,68 @@ const FinancialHub = () => {
                </div>
             </section>
 
-            {/* Savings Goals */}
-            <section>
-               <div className="flex justify-between items-center mb-6 px-4">
-                  <h3 className="text-xl font-black text-primary italic flex items-center gap-2"><Target className="text-secondary"/> Wealth Accumulation</h3>
-                  <button onClick={() => setShowGoalModal(true)} className="p-2 bg-secondary/10 text-primary rounded-xl hover:bg-secondary/20 transition-all"><Plus size={20}/></button>
+            {/* Savings Goals & Active Loans */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-12">
+               <div>
+                  <div className="flex justify-between items-center mb-6 px-4">
+                     <h3 className="text-xl font-black text-primary italic flex items-center gap-2"><Target className="text-secondary"/> Wealth Accumulation</h3>
+                     <button onClick={() => setShowGoalModal(true)} className="p-2 bg-secondary/10 text-primary rounded-xl hover:bg-secondary/20 transition-all"><Plus size={20}/></button>
+                  </div>
+                  <div className="space-y-6">
+                     {hubData?.savingsGoals?.map(goal => (
+                        <div key={goal.id} className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-50 shadow-sm relative overflow-hidden group">
+                           <div className="flex justify-between items-center mb-6">
+                              <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center"><Target size={24}/></div>
+                              <span className="text-xs font-black text-emerald-500 italic">{(goal.currentAmount / goal.targetAmount * 100).toFixed(0)}%</span>
+                           </div>
+                           <h4 className="font-black text-primary mb-1 uppercase text-sm">{goal.name}</h4>
+                           <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+                              <span>GHS {goal.currentAmount.toLocaleString()}</span>
+                              <span>Target: {goal.targetAmount.toLocaleString()}</span>
+                           </div>
+                           <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${(goal.currentAmount / goal.targetAmount * 100)}%` }}></div>
+                           </div>
+                        </div>
+                     ))}
+                     {(!hubData?.savingsGoals || hubData.savingsGoals.length === 0) && (
+                        <div className="p-10 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 text-center">
+                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No active accumulation targets.</p>
+                        </div>
+                     )}
+                  </div>
                </div>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                  {hubData?.savingsGoals?.map(goal => (
-                     <div key={goal.id} className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-50 shadow-sm relative overflow-hidden group">
-                        <div className="flex justify-between items-center mb-6">
-                           <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center"><Target size={24}/></div>
-                           <span className="text-xs font-black text-emerald-500 italic">{(goal.currentAmount / goal.targetAmount * 100).toFixed(0)}%</span>
+
+               <div>
+                  <div className="flex justify-between items-center mb-6 px-4">
+                     <h3 className="text-xl font-black text-primary italic flex items-center gap-2"><Banknote className="text-amber-500"/> Active Obligations</h3>
+                     <button onClick={() => setShowLoanModal(true)} className="p-2 bg-amber-500/10 text-amber-600 rounded-xl hover:bg-amber-500/20 transition-all"><Plus size={20}/></button>
+                  </div>
+                  <div className="space-y-6">
+                     {hubData?.loans?.filter(l => l.status === 'ACTIVE').map(loan => (
+                        <div key={loan.id} className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-50 shadow-sm relative overflow-hidden group">
+                           <div className="flex justify-between items-start mb-6">
+                              <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center font-black">L-{(loan.id % 1000)}</div>
+                              <button 
+                                 onClick={() => { setSelectedLoanId(loan.id); setShowPayLoanModal(true); }}
+                                 className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all"
+                              >
+                                 Clear Principal
+                              </button>
+                           </div>
+                           <h4 className="font-black text-primary mb-1 uppercase text-sm">Institutional Credit Line</h4>
+                           <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                              <span>Bal: GHS {loan.remainingBalance.toLocaleString()}</span>
+                              <span className="text-amber-500">Rate: {loan.interestRate * 100}%</span>
+                           </div>
                         </div>
-                        <h4 className="font-black text-primary mb-1 uppercase text-sm">{goal.name}</h4>
-                        <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
-                           <span>GHS {goal.currentAmount.toLocaleString()}</span>
-                           <span>Target: {goal.targetAmount.toLocaleString()}</span>
+                     ))}
+                     {(!hubData?.loans || hubData.loans.filter(l => l.status === 'ACTIVE').length === 0) && (
+                        <div className="p-10 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 text-center">
+                           <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No outstanding debts.</p>
                         </div>
-                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                           <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${(goal.currentAmount / goal.targetAmount * 100)}%` }}></div>
-                        </div>
-                     </div>
-                  ))}
-                  {(!hubData?.savingsGoals || hubData.savingsGoals.length === 0) && (
-                    <div className="col-span-2 p-10 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 text-center">
-                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No active accumulation targets.</p>
-                       <button onClick={() => setShowGoalModal(true)} className="mt-4 text-[10px] font-black text-primary uppercase underline">Initialize First Goal</button>
-                    </div>
-                  )}
+                     )}
+                  </div>
                </div>
             </section>
          </div>

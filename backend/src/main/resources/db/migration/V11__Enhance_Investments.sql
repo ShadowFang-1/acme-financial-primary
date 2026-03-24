@@ -1,0 +1,3 @@
+ALTER TABLE investments 
+ADD COLUMN growth_interval VARCHAR(20) DEFAULT 'MONTHLY',
+ADD COLUMN interest_rate DECIMAL(19, 4) DEFAULT 5.00;
