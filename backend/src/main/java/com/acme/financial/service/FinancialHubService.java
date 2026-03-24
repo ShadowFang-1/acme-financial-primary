@@ -103,35 +103,53 @@ public class FinancialHubService {
 
     @Transactional
     public SavingsGoal createGoal(User user, String name, BigDecimal target, String icon) {
+        User managedUser = userRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new RuntimeException("Operational Fault: Session integrity failed."));
+
         SavingsGoal goal = new SavingsGoal();
-        goal.setUser(user);
+        goal.setUser(managedUser);
         goal.setName(name);
         goal.setTargetAmount(target);
         goal.setCurrentAmount(BigDecimal.ZERO);
         goal.setIcon(icon != null ? icon : "target");
+        
+        recordAction("GOAL_ESTABLISHMENT", managedUser.getUsername(), "Initialized wealth goal: " + name, "HUB_SYSTEM");
         return savingsGoalRepository.save(goal);
     }
 
     @Transactional
     public Loan requestLoan(User user, BigDecimal amount, Integer months) {
+        User managedUser = userRepository.findByEmail(user.getEmail())
+                .orElseThrow(() -> new RuntimeException("Operational Fault: Session integrity failed."));
+
         // Institutional Credit Check: Minimum $500 total capital required
-        BigDecimal totalBalance = accountRepository.findByUser(user).stream()
+        BigDecimal totalBalance = accountRepository.findByUser(managedUser).stream()
                 .map(Account::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         if (totalBalance.compareTo(new BigDecimal("500.00")) < 0) {
-            throw new RuntimeException("Liquidity Insufficient: A $500 total reserve is required to bridge the credit pool. Access the Academy to learn how to accumulate capital first.");
+            throw new RuntimeException("Liquidity Insufficient: A $500 total reserve is required for credit authorization. Consult Academy for accumulation strategies.");
         }
 
         Loan loan = new Loan();
-        loan.setUser(user);
+        loan.setUser(managedUser);
         loan.setPrincipalAmount(amount);
         loan.setRemainingBalance(amount);
         loan.setInterestRate(new BigDecimal("0.08"));
         loan.setStartDate(LocalDateTime.now());
         loan.setDurationInMonths(months);
         loan.setStatus("ACTIVE");
-        auditLogRepository.save(new AuditLog("LOAN_REQUEST", user.getUsername(), "Requested $" + amount, "Internal"));
+        
+        // CREDIT THE SAVINGS ACCOUNT
+        Account savings = accountRepository.findByUser(managedUser).stream()
+            .filter(a -> a.getType() == AccountType.SAVINGS)
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Vault Error: No primary Savings account to receive institutional credit."));
+        
+        savings.setBalance(savings.getBalance().add(amount));
+        accountRepository.save(savings);
+
+        recordAction("CREDIT_AUTHORIZED", managedUser.getUsername(), "Loan of " + amount + " authorized and credited to Savings vault.", "CREDIT_POOL");
         return loanRepository.save(loan);
     }
 

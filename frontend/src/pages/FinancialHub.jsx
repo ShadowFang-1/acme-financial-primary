@@ -133,19 +133,37 @@ const FinancialHub = () => {
       {showAcademy && (
         <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[200] flex items-center justify-center p-6 text-white animate-in zoom-in-95">
            <button onClick={() => setShowAcademy(false)} className="absolute top-10 right-10 hover:rotate-90 transition-all"><X size={32}/></button>
-           <div className="max-w-4xl text-center">
-              <h2 className="text-4xl font-black italic mb-10">ACME Academy: Asset Mastery</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-left">
-                 <div className="p-8 bg-white/5 rounded-3xl border border-white/10">
-                    <Zap className="text-secondary mb-4" />
-                    <h4 className="font-black italic mb-2 uppercase">Leveraging APY</h4>
-                    <p className="text-xs text-slate-400">Learn how to maximize ACME's High-Yield rates through compounding.</p>
+           <div className="max-w-4xl text-left bg-slate-900/40 p-12 rounded-[3.5rem] border border-white/5 shadow-3xl">
+              <h2 className="text-4xl font-black italic mb-4 text-center">ACME Academy: Asset Mastery</h2>
+              <p className="text-center text-slate-400 text-xs uppercase tracking-[0.5em] mb-12 italic font-bold">Institutional Intelligence Engine</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                 <div className="space-y-6">
+                    <div className="p-8 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all cursor-default">
+                       <Zap className="text-secondary mb-4" size={32} />
+                       <h4 className="font-black italic mb-4 uppercase tracking-widest text-sm">1. Mastering APY</h4>
+                       <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                          Annual Percentage Yield (APY) represents the real rate of return on your ACME High-Yield assets. 
+                          By reinvesting your returns, you trigger **The Volatility Shield**, where your capital grows exponentially 
+                          over time. ACME provides tiered rates from **5% to 12%** based on your institutional commitment.
+                       </p>
+                    </div>
                  </div>
-                 <div className="p-8 bg-white/5 rounded-3xl border border-white/10">
-                    <Target className="text-emerald-400 mb-4" />
-                    <h4 className="font-black italic mb-2 uppercase">Risk Management</h4>
-                    <p className="text-xs text-slate-400">Discover institutional techniques for shielding capital from volatility.</p>
+                 
+                 <div className="space-y-6">
+                    <div className="p-8 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all cursor-default">
+                       <ShieldCheck className="text-emerald-400 mb-4" size={32} />
+                       <h4 className="font-black italic mb-4 uppercase tracking-widest text-sm">2. Strategic Risk Shield</h4>
+                       <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                          Institutional wealth is protected by diversification. By moving capital from liquid Savings into 
+                          our **Managed Portfolio**, you lock in growth while our automated engines simulation market stability. 
+                          Never risk more than 20% of your total liquidity on unverified trading sandboxes.
+                       </p>
+                    </div>
                  </div>
+              </div>
+              <div className="mt-12 text-center">
+                 <button onClick={() => setShowAcademy(false)} className="px-12 py-4 bg-white text-primary font-black uppercase text-[10px] tracking-widest rounded-2xl hover:scale-105 transition-all">Understood, Return to Hub</button>
               </div>
            </div>
         </div>
