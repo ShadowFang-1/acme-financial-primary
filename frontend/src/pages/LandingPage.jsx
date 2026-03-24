@@ -83,7 +83,7 @@ const Hero = () => (
           Banking for the <br className="hidden sm:block" /> <span className="text-gradient">Future Generation.</span>
         </h1>
         <p className="text-base sm:text-lg lg:text-xl text-slate-600 mb-8 lg:mb-10 leading-relaxed max-w-xl mx-auto lg:mx-0">
-          Experience seamless, digital-first banking with ACME Financial. Manage your wealth, transfer globally, and grow your savings with our state-of-the-art platform.
+          Experience seamless, digital-first banking with ZENITH GLOBAL. Manage your wealth, transfer globally, and grow your savings with our state-of-the-art platform.
         </p>
         <div className="flex flex-col sm:flex-row flex-wrap justify-center lg:justify-start gap-4">
           <Link to="/register" className="btn-primary py-4 px-8 text-sm sm:text-lg uppercase tracking-widest font-black">
@@ -123,7 +123,7 @@ const About = () => (
     <div className="max-w-7xl mx-auto px-6">
       <div className="text-center max-w-3xl mx-auto mb-20">
         <h2 className="text-4xl md:text-5xl font-black mb-6 text-primary">Simple. Secure. Powerful.</h2>
-        <p className="text-lg text-slate-500 font-medium leading-relaxed">ACME Financial is built on the pillars of cutting-edge technology and human-centric service.</p>
+        <p className="text-lg text-slate-500 font-medium leading-relaxed">ZENITH GLOBAL is built on the pillars of cutting-edge technology and human-centric service.</p>
       </div>
       
       <div className="grid md:grid-cols-3 gap-8 sm:gap-12">

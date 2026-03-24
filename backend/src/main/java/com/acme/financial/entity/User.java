@@ -45,6 +45,7 @@ public class User implements UserDetails {
     private java.time.LocalDateTime otpExpiry;
     private String dateOfBirth;
     private LocalDateTime createdAt;
+    private String refreshToken;
 
     public User() {}
 
@@ -122,6 +123,9 @@ public class User implements UserDetails {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getRefreshToken() { return refreshToken; }
+    public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
 
     @PrePersist
     protected void onCreate() {

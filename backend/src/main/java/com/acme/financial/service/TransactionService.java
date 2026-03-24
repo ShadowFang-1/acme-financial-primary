@@ -28,20 +28,20 @@ public class TransactionService {
         this.notificationService = notificationService;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void transfer(User user, TransferRequest request) {
         if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Transfer amount must be greater than zero");
         }
 
-        Account fromAccount = accountRepository.findByAccountNumber(request.getFromAccountNumber())
+        Account fromAccount = accountRepository.findWithLockByAccountNumber(request.getFromAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Sender account not found"));
         
         if (!fromAccount.getUser().getId().equals(user.getId())) {
             throw new RuntimeException("You do not own this account");
         }
         
-        Account toAccount = accountRepository.findByAccountNumber(request.getToAccountNumber())
+        Account toAccount = accountRepository.findWithLockByAccountNumber(request.getToAccountNumber())
                 .orElseThrow(() -> new RuntimeException("Receiver account not found"));
 
         if (fromAccount.isFrozen()) {
@@ -84,13 +84,13 @@ public class TransactionService {
         notificationService.notify(toAccount.getUser(), "Transfer Received", receiverMsg);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deposit(String accountNumber, BigDecimal amount, String description) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Deposit amount must be greater than zero");
         }
 
-        Account account = accountRepository.findByAccountNumber(accountNumber)
+        Account account = accountRepository.findWithLockByAccountNumber(accountNumber)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         if (account.isFrozen()) {
@@ -115,13 +115,13 @@ public class TransactionService {
         notificationService.notify(account.getUser(), "Deposit Successful", msg);
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void withdraw(User user, String accountNumber, BigDecimal amount, String description) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Withdrawal amount must be greater than zero");
         }
 
-        Account account = accountRepository.findByAccountNumber(accountNumber)
+        Account account = accountRepository.findWithLockByAccountNumber(accountNumber)
                 .orElseThrow(() -> new RuntimeException("Account not found"));
 
         if (!account.getUser().getId().equals(user.getId())) {

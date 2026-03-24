@@ -37,6 +37,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
+import Skeleton from '../components/Skeleton';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -231,12 +233,17 @@ const Dashboard = () => {
       hideBell
     >
       {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in duration-700">
-           <div className="w-16 h-16 bg-primary/5 rounded-[2rem] flex items-center justify-center mb-6 relative">
-              <div className="absolute inset-0 border-4 border-primary border-t-transparent rounded-[2rem] animate-spin"></div>
-              <ShieldCheck size={32} className="text-primary opacity-20" />
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 animate-pulse">
+           <div className="col-span-1 lg:col-span-8 space-y-10">
+              <Skeleton className="h-10 w-48 mb-6" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                 <Skeleton className="h-64 rounded-[2.5rem]" />
+                 <Skeleton className="h-64 rounded-[2.5rem]" />
+              </div>
            </div>
-           <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.3em] animate-pulse">Loading Your Accounts...</p>
+           <div className="col-span-1 lg:col-span-4">
+              <Skeleton className="h-[400px] rounded-[2.5rem]" />
+           </div>
         </div>
       ) : (
         <>
@@ -253,7 +260,7 @@ const Dashboard = () => {
       <div id="receipt-area" className="hidden">
         <div style={{ padding: '40px', background: 'white', color: 'black', fontFamily: 'serif', maxWidth: '600px', margin: 'auto', border: '2px solid #EEE' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #0F172A', paddingBottom: '20px' }}>
-            <h1 style={{ margin: '0', fontSize: '28px', color: '#0F172A' }}>ACME FINANCIAL</h1>
+            <h1 style={{ margin: '0', fontSize: '28px', color: '#0F172A' }}>ZENITH GLOBAL</h1>
             <p style={{ margin: '5px', fontSize: '12px', letterSpacing: '2px' }}>OFFICIAL LEDGER RECEIPT</p>
           </div>
           
@@ -275,7 +282,7 @@ const Dashboard = () => {
           
           <div style={{ marginTop: '40px', textAlign: 'center', opacity: '0.4', fontSize: '10px' }}>
             <p>This is a system generated document. End-to-End Encrypted Verification.</p>
-            <p>© 2026 ACME FINANCIAL GROUP</p>
+            <p>© 2026 ZENITH GLOBAL GROUP</p>
           </div>
         </div>
       </div>
@@ -726,8 +733,40 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Defense Matrix (Section 4) */}
+        {/* Financial Intel (Section 4) */}
         <div className="col-span-1 lg:col-span-4 space-y-8 lg:space-y-10">
+          <div className="card shadow-xl border-none bg-white rounded-[1.5rem] sm:rounded-[2.5rem] p-8">
+            <h4 className="font-black text-slate-800 uppercase tracking-tighter text-lg mb-6 flex items-center gap-2">
+               <TrendingDown size={20} className="text-secondary" /> Spending Intel
+            </h4>
+            <div className="h-[250px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Fixed', value: 400 },
+                      { name: 'Variable', value: 300 },
+                      { name: 'Savings', value: 300 },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    <Cell fill="#001a33" />
+                    <Cell fill="#10b981" />
+                    <Cell fill="#0284c7" />
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4 text-center italic">Monthly Outflow breakdown</p>
+          </div>
+
           <div className="card overflow-hidden !p-0 shadow-xl border-none bg-white rounded-[1.5rem] sm:rounded-[2.5rem]">
             <div className="p-8 bg-slate-50 border-b border-slate-100">
               <div className="flex items-center gap-5">

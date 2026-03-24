@@ -8,16 +8,16 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#002855', // CalBank Dark Blue
-          light: '#004080',
-          dark: '#001a33',
+          DEFAULT: '#001a33', // Deep Navy
+          light: '#002855',
+          dark: '#000d1a',
         },
         secondary: {
-          DEFAULT: '#FFD700', // Gold/Yellow
-          light: '#FFE033',
-          dark: '#CCAC00',
+          DEFAULT: '#10b981', // Emerald
+          light: '#34d399',
+          dark: '#059669',
         },
-        accent: '#E63946',
+        accent: '#0284c7', // Sky Blue
       },
       fontFamily: {
         poppins: ['Poppins', 'sans-serif'],

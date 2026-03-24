@@ -65,4 +65,11 @@ public class AuthController {
         service.resetPassword(request.getEmail(), request.getOtp(), request.getNewPassword());
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthenticationResponse> refresh(
+            @RequestHeader("Refresh-Token") String token
+    ) {
+        return ResponseEntity.ok(service.refreshToken(token));
+    }
 }

@@ -17,11 +17,14 @@ public class AuthenticationResponse {
     private boolean requiresOtp;
     @JsonProperty("identifier")
     private String identifier;
+    @JsonProperty("refreshToken")
+    private String refreshToken;
 
     public AuthenticationResponse() {}
 
-    public AuthenticationResponse(String token, String username, String email, Role role, String imageUrl, boolean pushNotifications, boolean emailAlerts, boolean loginNotifications, boolean requiresOtp, String identifier) {
+    public AuthenticationResponse(String token, String refreshToken, String username, String email, Role role, String imageUrl, boolean pushNotifications, boolean emailAlerts, boolean loginNotifications, boolean requiresOtp, String identifier) {
         this.token = token;
+        this.refreshToken = refreshToken;
         this.username = username;
         this.email = email;
         this.role = role;
@@ -57,6 +60,8 @@ public class AuthenticationResponse {
     public void setRequiresOtp(boolean requiresOtp) { this.requiresOtp = requiresOtp; }
     public String getIdentifier() { return identifier; }
     public void setIdentifier(String identifier) { this.identifier = identifier; }
+    public String getRefreshToken() { return refreshToken; }
+    public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
 
     public static class AuthenticationResponseBuilder {
         private String token;
@@ -69,6 +74,7 @@ public class AuthenticationResponse {
         private boolean loginNotifications;
         private boolean requiresOtp;
         private String identifier;
+        private String refreshToken;
 
         public AuthenticationResponseBuilder token(String token) { this.token = token; return this; }
         public AuthenticationResponseBuilder username(String username) { this.username = username; return this; }
@@ -80,9 +86,10 @@ public class AuthenticationResponse {
         public AuthenticationResponseBuilder loginNotifications(boolean loginNotifications) { this.loginNotifications = loginNotifications; return this; }
         public AuthenticationResponseBuilder requiresOtp(boolean requiresOtp) { this.requiresOtp = requiresOtp; return this; }
         public AuthenticationResponseBuilder identifier(String identifier) { this.identifier = identifier; return this; }
+        public AuthenticationResponseBuilder refreshToken(String refreshToken) { this.refreshToken = refreshToken; return this; }
 
         public AuthenticationResponse build() {
-            return new AuthenticationResponse(token, username, email, role, imageUrl, pushNotifications, emailAlerts, loginNotifications, requiresOtp, identifier);
+            return new AuthenticationResponse(token, refreshToken, username, email, role, imageUrl, pushNotifications, emailAlerts, loginNotifications, requiresOtp, identifier);
         }
     }
 }

@@ -200,8 +200,13 @@ public class AuthService {
         }
 
         var jwtToken = jwtService.generateToken(user);
+        var refreshToken = jwtService.generateRefreshToken(user);
+        user.setRefreshToken(refreshToken);
+        repository.save(user);
+
         return AuthenticationResponse.builder()
                 .token(jwtToken)
+                .refreshToken(refreshToken)
                 .username(user.getDisplayName())
                 .email(user.getEmail())
                 .role(user.getRole())
@@ -210,6 +215,26 @@ public class AuthService {
                 .emailAlerts(user.isEmailAlerts())
                 .loginNotifications(user.isLoginNotifications())
                 .build();
+    }
+
+    public AuthenticationResponse refreshToken(String refreshToken) {
+        final String userEmail = jwtService.extractUsername(refreshToken);
+        if (userEmail != null) {
+            var user = repository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found during token refresh"));
+            
+            if (jwtService.isTokenValid(refreshToken, user) && refreshToken.equals(user.getRefreshToken())) {
+                var accessToken = jwtService.generateToken(user);
+                return AuthenticationResponse.builder()
+                        .token(accessToken)
+                        .refreshToken(refreshToken)
+                        .username(user.getDisplayName())
+                        .email(user.getEmail())
+                        .role(user.getRole())
+                        .build();
+            }
+        }
+        throw new RuntimeException("Refresh token is invalid or expired");
     }
 
     public void forgotPassword(String email) {
