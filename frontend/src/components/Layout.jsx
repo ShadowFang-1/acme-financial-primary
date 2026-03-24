@@ -20,7 +20,8 @@ import {
   MoreVertical,
   MoreHorizontal,
   BarChart3,
-  Users2
+  Users2,
+  TrendingUp
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
