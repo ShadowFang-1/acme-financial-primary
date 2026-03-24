@@ -62,6 +62,7 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
 
   const userMenuItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/hub', icon: TrendingUp, label: 'Financial Hub' },
     { to: '/transfer', icon: Send, label: 'Transfer' },
     { to: '/transactions', icon: History, label: 'History' },
     { to: '/notifications', icon: Inbox, label: 'Notifications', badge: true },

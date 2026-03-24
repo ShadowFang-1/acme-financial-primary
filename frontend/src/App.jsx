@@ -10,6 +10,8 @@ import Profile from './pages/Profile';
 import ForgotPassword from './pages/ForgotPassword';
 import LandingPage from './pages/LandingPage';
 import Notifications from './pages/Notifications';
+import FinancialHub from './pages/FinancialHub';
+import BillPayment from './pages/BillPayment';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import RestorationManager from './components/RestorationManager';
 import LoadingScreen from './components/LoadingScreen';
@@ -55,6 +57,18 @@ function App() {
                 </ProtectedRoute>
               } />
               
+              <Route path="/bill-pay" element={
+                <ProtectedRoute role="USER">
+                  <BillPayment />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/hub" element={
+                <ProtectedRoute role="USER">
+                  <FinancialHub />
+                </ProtectedRoute>
+              } />
+
               <Route path="/transfer" element={
                 <ProtectedRoute role="USER">
                   <Transfer />

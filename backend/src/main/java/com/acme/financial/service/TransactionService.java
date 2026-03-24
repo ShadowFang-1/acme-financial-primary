@@ -20,12 +20,47 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
+    private final com.acme.financial.repository.UserRepository userRepository;
     private final NotificationService notificationService;
 
-    public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository, NotificationService notificationService) {
+    public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository, com.acme.financial.repository.UserRepository userRepository, NotificationService notificationService) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
+        this.userRepository = userRepository;
         this.notificationService = notificationService;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void p2pTransfer(User sender, String identifier, BigDecimal amount, String description) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("P2P Amount must be positive");
+        }
+
+        // 1. Find Recipient
+        java.util.List<User> recipients = userRepository.findByIdentifier(identifier);
+        if (recipients.isEmpty()) {
+            throw new RuntimeException("Zenith Pay Error: No user found with ID '" + identifier + "'");
+        }
+        User recipient = recipients.get(0);
+
+        // 2. Find Senders Primary Account
+        Account fromAccount = accountRepository.findByUserId(sender.getId()).stream()
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Your primary account is not accessible"));
+
+        // 3. Find Recipients Primary Account
+        Account toAccount = accountRepository.findByUserId(recipient.getId()).stream()
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Recipient has no active Zenith accounts"));
+
+        // 4. Execute Transfer
+        TransferRequest req = new TransferRequest();
+        req.setFromAccountNumber(fromAccount.getAccountNumber());
+        req.setToAccountNumber(toAccount.getAccountNumber());
+        req.setAmount(amount);
+        req.setDescription(description != null ? description : "P2P Zenith Pay via " + identifier);
+        
+        transfer(sender, req);
     }
 
     @Transactional(rollbackFor = Exception.class)

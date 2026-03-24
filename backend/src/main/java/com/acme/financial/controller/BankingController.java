@@ -113,4 +113,14 @@ public class BankingController {
                 .orElseThrow(() -> new RuntimeException("Account not found"));
         return ResponseEntity.ok(transactionService.getTransactionHistory(account, pageable));
     }
+
+    @PostMapping("/p2p-transfer")
+    public ResponseEntity<Void> p2pTransfer(
+            @AuthenticationPrincipal User user,
+            @RequestParam String identifier,
+            @RequestParam java.math.BigDecimal amount,
+            @RequestParam(required = false) String description) {
+        transactionService.p2pTransfer(user, identifier, amount, description);
+        return ResponseEntity.ok().build();
+    }
 }
