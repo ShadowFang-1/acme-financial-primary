@@ -57,6 +57,7 @@ public class FinancialHubService {
         
         BigDecimal totalSavings = savingsGoalRepository.findByUser_Id(managedUser.getId()).stream()
             .map(SavingsGoal::getCurrentAmount)
+            .filter(java.util.Objects::nonNull)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         summary.put("totalSavingsProgress", totalSavings);
 

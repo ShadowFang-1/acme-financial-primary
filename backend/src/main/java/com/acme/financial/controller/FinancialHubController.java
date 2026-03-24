@@ -20,9 +20,14 @@ public class FinancialHubController {
     }
 
     @GetMapping("/summary")
-    public ResponseEntity<Map<String, Object>> getSummary(@AuthenticationPrincipal User user) {
+    public ResponseEntity<?> getSummary(@AuthenticationPrincipal User user) {
         if (user == null) return ResponseEntity.status(401).build();
-        return ResponseEntity.ok(hubService.getFinancialSummary(user));
+        try {
+            return ResponseEntity.ok(hubService.getFinancialSummary(user));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("message", "Operational Fault: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/invest")
@@ -56,13 +61,18 @@ public class FinancialHubController {
     }
 
     @PostMapping("/savings/create")
-    public ResponseEntity<SavingsGoal> createGoal(
+    public ResponseEntity<?> createGoal(
             @AuthenticationPrincipal User user,
             @RequestParam String name,
             @RequestParam BigDecimal target,
             @RequestParam(required = false) String icon
     ) {
-        return ResponseEntity.ok(hubService.createGoal(user, name, target, icon));
+        try {
+            return ResponseEntity.ok(hubService.createGoal(user, name, target, icon));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("message", "Wealth Target Initializer Fault: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/loans/apply")
