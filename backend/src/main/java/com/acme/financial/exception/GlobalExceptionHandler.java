@@ -1,9 +1,11 @@
 package com.acme.financial.exception;
 
 import com.acme.financial.dto.ErrorResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -12,8 +14,26 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(BadCredentialsException ex) {
+        String msg = "Bad credentials".equalsIgnoreCase(ex.getMessage()) 
+                ? "Invalid username or password. Please try again." 
+                : ex.getMessage();
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-            .body(new ErrorResponse("Invalid email or password", "AUTH_FAILED"));
+            .body(new ErrorResponse(msg, "AUTH_FAILED"));
+    }
+
+    @ExceptionHandler(DisabledException.class)
+    public ResponseEntity<ErrorResponse> handleDisabled(DisabledException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(new ErrorResponse("Your account has been disabled. Please contact support.", "ACCOUNT_DISABLED"));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+        String msg = ex.getMessage() != null && ex.getMessage().contains("email")
+                ? "An account with this email already exists."
+                : "Database integrity violation occurred.";
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(new ErrorResponse(msg, "DATA_CONFLICT"));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -22,11 +42,17 @@ public class GlobalExceptionHandler {
             .body(new ErrorResponse(ex.getMessage(), "INVALID_REQUEST"));
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
+        ex.printStackTrace(); 
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(new ErrorResponse(ex.getMessage() != null ? ex.getMessage() : "Execution error", "RUNTIME_ERROR"));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex) {
-        // Log the exception in a real app
         ex.printStackTrace(); 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ErrorResponse("An unexpected error occurred our systems. Please try again later.", "INTERNAL_ERROR"));
+            .body(new ErrorResponse("An unexpected internal error occurred. Our team has been notified.", "INTERNAL_ERROR"));
     }
 }
