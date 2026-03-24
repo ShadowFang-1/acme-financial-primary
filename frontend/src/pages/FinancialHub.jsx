@@ -14,366 +14,354 @@ import {
   Zap,
   Clock,
   Briefcase,
-  X
+  X,
+  CreditCard
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import Layout from '../components/Layout';
-import Skeleton from '../components/Skeleton';
 import { 
-  PieChart, 
-  Pie, 
-  Cell, 
-  ResponsiveContainer, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
   Tooltip as RechartsTooltip, 
-  Legend 
+  ResponsiveContainer, 
+  Cell,
+  PieChart,
+  Pie
 } from 'recharts';
+import Layout from '../components/Layout';
 
 const FinancialHub = () => {
-  const { user } = useAuth();
   const [hubData, setHubData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
-  const [isCalcOpen, setIsCalcOpen] = useState(false);
-  
-  // Calculator state
+  const [activeTab, setActiveTab] = useState('overview');
   const [calcInputs, setCalcInputs] = useState({ principal: 1000, rate: 0.1, years: 5 });
   const [calcResult, setCalcResult] = useState(null);
+
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [goalName, setGoalName] = useState('');
+  const [goalTarget, setGoalTarget] = useState('');
+  
+  const [showLoanModal, setShowLoanModal] = useState(false);
+  const [loanAmount, setLoanAmount] = useState('');
+
+  const [showInvestModal, setShowInvestModal] = useState(false);
+  const [investAmount, setInvestAmount] = useState('');
+
+  const [showAcademy, setShowAcademy] = useState(false);
+  const [showTradeSandbox, setShowTradeSandbox] = useState(false);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     try {
       const res = await axios.get('/api/v1/hub/summary');
       setHubData(res.data);
     } catch (err) {
-      console.error("Hub Fetch Error:", err);
+      console.error("Hub Error:", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreateGoal = async () => {
+    if (!goalName || !goalTarget) return;
+    setLoading(true);
+    try {
+      await axios.post('/api/v1/hub/savings/create', null, { params: { name: goalName, target: goalTarget } });
+      fetchData();
+      setShowGoalModal(false);
+      setGoalName(''); setGoalTarget('');
+    } catch (err) { alert("Goal creation failed."); }
+    finally { setLoading(false); }
+  };
+
+  const handleApplyLoan = async () => {
+    if (!loanAmount) return;
+    setLoading(true);
+    try {
+      await axios.post('/api/v1/hub/loans/apply', null, { params: { amount: loanAmount, months: 12 } });
+      fetchData();
+      setShowLoanModal(false);
+      setLoanAmount('');
+      alert("Credit Approved!");
+    } catch (err) { alert("Loan declinded."); }
+    finally { setLoading(false); }
+  };
+
+  const handleInvest = async () => {
+    if (!investAmount) return;
+    setLoading(true);
+    try {
+      await axios.post('/api/v1/hub/invest', null, { params: { amount: investAmount } });
+      fetchData();
+      setShowInvestModal(false);
+      setInvestAmount('');
+      alert("Investment Successful!");
+    } catch (err) { alert(err.response?.data?.message || "Investment failed."); }
+    finally { setLoading(false); }
   };
 
   const handleCalculate = async () => {
     try {
       const res = await axios.get('/api/v1/hub/calculator/compound', { params: calcInputs });
       setCalcResult(res.data.futureValue);
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { alert("Calc Error"); }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const investmentData = hubData?.investments?.map(inv => ({
-    name: inv.assetName,
-    value: parseFloat(inv.quantity) * parseFloat(inv.avgPurchasePrice)
-  })) || [];
+  const pieData = hubData?.investments?.map((inv, idx) => ({
+    name: inv.assetName || "Fund " + (idx+1),
+    value: parseFloat(inv.amount || 0)
+  })) || [{ name: 'Cash Reserve', value: 1000 }];
 
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
 
+  const STOCKS = [
+    { symbol: 'AAPL', name: 'Apple Inc', price: 189.45, trend: '+1.2%' },
+    { symbol: 'BTC', name: 'Bitcoin (Spot)', price: 64230.10, trend: '-0.5%' },
+    { symbol: 'TSLA', name: 'Tesla Corp', price: 172.10, trend: '+4.5%' }
+  ];
+
+  if (loading) return <Layout title="Loading Hub..."><div className="p-20 text-center animate-pulse italic font-black text-slate-300">Synchronizing Institutional Records...</div></Layout>;
+
   return (
-    <Layout 
-      title="Zenith Financial Hub" 
-      subtitle="Institutional Wealth Management & Intelligence"
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* Left Column: Big Stats & Goals */}
-        <div className="lg:col-span-8 space-y-8">
-          
-          {/* Portfolio Hero */}
-          <div className="relative overflow-hidden bg-primary rounded-[2.5rem] p-8 lg:p-12 text-white shadow-2xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-secondary opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-            <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-              <div>
-                <p className="text-secondary font-black text-xs uppercase tracking-[0.2em] mb-4">Net Wealth Index</p>
-                <h2 className="text-5xl lg:text-6xl font-black tracking-tighter italic mb-2">Portfolio Total</h2>
-                <div className="flex items-baseline gap-2">
-                   <p className="text-4xl font-light opacity-60">$</p>
-                   <p className="text-4xl font-black">---</p>
-                   <span className="ml-4 px-3 py-1 bg-green-500/20 text-green-300 text-[10px] font-black rounded-full border border-green-500/30">+12.4% YTD</span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-4">
-                 <button className="bg-secondary text-primary px-8 py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:scale-105 transition-all shadow-xl shadow-secondary/20 flex items-center gap-2">
-                    <TrendingUp size={18} /> Manage Assets
-                 </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Savings Goals Buckets */}
-          <section>
-            <div className="flex justify-between items-center mb-6">
-               <h3 className="text-xl font-black text-primary uppercase tracking-tight italic flex items-center gap-3">
-                 <Target className="text-secondary" /> Savings Goals
-               </h3>
-               <button onClick={() => setIsGoalModalOpen(true)} className="p-2 bg-white border-2 border-slate-100 rounded-xl hover:border-primary transition-all text-primary">
-                  <Plus size={20} />
-               </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {loading ? [1,2].map(i => <div key={i} className="h-48 bg-slate-100 animate-pulse rounded-3xl" />) : (
-                hubData?.savingsGoals?.length > 0 ? hubData.savingsGoals.map(goal => (
-                  <div key={goal.id} className="bg-white p-6 rounded-3xl border-2 border-slate-50 shadow-sm group hover:border-primary transition-all">
-                    <div className="flex justify-between items-start mb-6">
-                       <div className="w-12 h-12 bg-secondary/10 rounded-2xl flex items-center justify-center text-secondary group-hover:scale-110 transition-transform">
-                          <Zap size={24} />
-                       </div>
-                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full">Automated</span>
-                    </div>
-                    <p className="font-black text-primary uppercase tracking-tight mb-1">{goal.name}</p>
-                    <div className="flex justify-between items-end mb-4 text-xs font-bold text-slate-400">
-                       <p><span className="text-primary">${goal.currentAmount}</span> / ${goal.targetAmount}</p>
-                       <p>{Math.round((goal.currentAmount / goal.targetAmount) * 100)}%</p>
-                    </div>
-                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                       <div className="h-full bg-secondary transition-all duration-1000" style={{ width: `${(goal.currentAmount / goal.targetAmount) * 100}%` }}></div>
-                    </div>
-                  </div>
-                )) : (
-                  <div className="col-span-full py-12 text-center bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200">
-                     <Target className="mx-auto text-slate-300 mb-4" size={48} />
-                     <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No active savings buckets</p>
-                     <button onClick={() => setIsGoalModalOpen(true)} className="mt-4 text-primary font-black text-[10px] uppercase tracking-widest hover:opacity-70 transition-opacity">Start Saving Now</button>
-                  </div>
-                )
-              )}
-            </div>
-          </section>
-
-          {/* Institutional Loans */}
-          <section>
-             <h3 className="text-xl font-black text-primary uppercase tracking-tight italic mb-6 flex items-center gap-3">
-               <Banknote className="text-secondary" /> ACTIVE CREDIT LINES
-             </h3>
-             <div className="bg-white border-2 border-slate-50 rounded-[2.5rem] overflow-hidden">
-                <div className="p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
-                   <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Outstanding</p>
-                      <p className="text-3xl font-black text-primary">$0.00</p>
-                   </div>
-                   <button className="px-6 py-3 bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-all">Apply for Funding</button>
-                </div>
-                <div className="p-8 flex items-center justify-center min-h-[150px]">
-                   <p className="text-slate-300 font-black text-[9px] uppercase tracking-widest">No active debt exposure found in current credit report</p>
-                </div>
-             </div>
-          </section>
-
-          {/* Zenith Academy & Venture Insights */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[2.5rem] p-8 text-white shadow-xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full translate-x-1/2 -translate-y-1/2"></div>
-                <h4 className="text-xs font-black uppercase tracking-[0.2em] mb-4">Zenith Academy</h4>
-                <p className="text-2xl font-black tracking-tight mb-4 italic">Mastering Digital Assets</p>
-                <p className="text-xs text-white/80 leading-relaxed mb-6">Learn why institutional investors use Zenith for high-liquidity operations.</p>
-                <button className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-white/20 hover:bg-white/30 px-6 py-3 rounded-xl transition-all">
-                   Start Learning <ArrowRight size={14} />
-                </button>
-             </div>
-
-             <div className="bg-white border-2 border-slate-100 rounded-[2.5rem] p-8 shadow-sm group hover:border-secondary transition-all">
-                <div className="flex gap-2 mb-4">
-                   <span className="px-3 py-1 bg-amber-100 text-amber-600 text-[8px] font-black rounded-full uppercase tracking-widest">Startup Concept</span>
-                   <span className="px-3 py-1 bg-blue-100 text-blue-600 text-[8px] font-black rounded-full uppercase tracking-widest">Beta</span>
-                </div>
-                <h4 className="text-xl font-black text-primary tracking-tight mb-2 italic flex items-center gap-2">
-                   Zenith Trade <TrendingUp size={20} className="text-secondary" />
-                </h4>
-                <p className="text-xs text-slate-500 leading-relaxed mb-6">Experience the next generation of social trading. Connect your Zenith account to fractional equity markets.</p>
-                <button className="w-full flex items-center justify-between text-primary font-black text-[10px] uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity">
-                   Explore the Pitch <ChevronRight size={16} />
-                </button>
-             </div>
-          </div>
-
-        </div>
-
-        {/* Right Column: Visualization & Tools */}
-        <div className="lg:col-span-4 space-y-8">
-          
-          {/* Portfolio Analysis */}
-          <div className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-50 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
-            <h3 className="text-sm font-black text-primary uppercase tracking-widest mb-8 flex items-center gap-2">
-              <PieChartIcon size={18} className="text-secondary" /> Asset Distribution
-            </h3>
-            
-            <div className="h-[250px] w-full mb-8">
-              {investmentData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={investmentData}
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {investmentData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip />
-                    <Legend verticalAlign="bottom" height={36}/>
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-300 text-center px-6">
-                   <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                      <Briefcase size={32} />
-                   </div>
-                   <p className="text-[9px] font-black uppercase tracking-[0.2em]">Purchase assets to visualize Portfolio</p>
-                </div>
-              )}
-            </div>
-
-            <button className="w-full py-4 border-2 border-slate-100 rounded-2xl text-[10px] font-black text-primary uppercase tracking-widest hover:bg-slate-50 transition-colors">
-               Examine Allocation Details
-            </button>
-          </div>
-
-          {/* Expert Tools */}
-          <div className="space-y-4">
-             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-4">Expert Utilities</div>
-             
-             <button onClick={() => setIsCalcOpen(true)} className="w-full p-6 bg-gradient-to-r from-primary to-slate-800 rounded-3xl text-left text-white group hover:scale-[1.02] transition-all shadow-xl shadow-primary/10">
-                <div className="flex justify-between items-center mb-4">
-                   <Calculator className="text-secondary" size={24} />
-                   <ChevronRight size={18} className="text-white/20 group-hover:text-white transition-colors" />
-                </div>
-                <p className="font-black uppercase tracking-tight mb-1">Growth Projector</p>
-                <p className="text-[10px] text-white/50 uppercase font-bold tracking-widest">Calculate Compound Future Value</p>
-             </button>
-
-             <div className="w-full p-6 bg-white border-2 border-slate-50 rounded-3xl text-left group hover:border-primary transition-all shadow-sm">
-                <div className="flex justify-between items-center mb-4">
-                   <ShieldCheck className="text-blue-500" size={24} />
-                </div>
-                <p className="font-black text-primary uppercase tracking-tight mb-1">Audit Ledger</p>
-                <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Review {hubData?.auditLogs?.length || 0} Security Events</p>
-             </div>
-          </div>
-
-          {/* Easy Pay Quick Actions */}
-          <div className="bg-secondary/10 p-8 rounded-[2.5rem] border border-secondary/20">
-             <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-6 italic">Zenith Easy-Pay Center</h4>
-             <div className="space-y-4">
-                <Link to="/bill-pay" className="w-full flex items-center justify-between p-4 bg-white/80 backdrop-blur-md rounded-2xl hover:bg-white transition-colors group/link">
-                   <span className="text-xs font-black text-primary tracking-tight uppercase">Bill Payment</span>
-                   <ArrowRight size={14} className="text-primary/30 group-hover/link:translate-x-1 transition-transform" />
-                </Link>
-                <Link to="/bill-pay" className="w-full flex items-center justify-between p-4 bg-white/80 backdrop-blur-md rounded-2xl hover:bg-white transition-colors group/link">
-                   <span className="text-xs font-black text-primary tracking-tight uppercase">Subscription Manager</span>
-                   <ArrowRight size={14} className="text-primary/30 group-hover/link:translate-x-1 transition-transform" />
-                </Link>
-                <Link to="/transfer" className="w-full flex items-center justify-between p-4 bg-white/80 backdrop-blur-md rounded-2xl hover:bg-white transition-colors group/link">
-                   <span className="text-xs font-black text-primary tracking-tight uppercase">Recurring Transfers</span>
-                   <ArrowRight size={14} className="text-primary/30 group-hover/link:translate-x-1 transition-transform" />
-                </Link>
-             </div>
-          </div>
-
-        </div>
-      </div>
-
-      {/* Calculator Modal */}
-      {isCalcOpen && (
-        <div className="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] flex items-center justify-center p-6 animate-in fade-in">
-           <div className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95 duration-300">
-              <div className="flex justify-between items-center mb-8">
-                 <h2 className="text-xl font-black text-primary tracking-tighter uppercase italic flex items-center gap-2">
-                    <Calculator className="text-secondary" /> Growth Projector
-                 </h2>
-                 <button onClick={() => setIsCalcOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors"><X size={20} /></button>
-              </div>
-
-              <div className="space-y-6 mb-8">
-                 <div>
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Initial Principal ($)</label>
-                    <input 
-                      type="number" 
-                      className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-secondary transition-all font-bold"
-                      value={calcInputs.principal}
-                      onChange={(e) => setCalcInputs({...calcInputs, principal: e.target.value})}
-                    />
+    <Layout title="ACME Financial Hub" subtitle="Institutional Wealth Management & Intelligence">
+      
+      {/* Academy Overlay */}
+      {showAcademy && (
+        <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[200] flex items-center justify-center p-6 text-white animate-in zoom-in-95">
+           <button onClick={() => setShowAcademy(false)} className="absolute top-10 right-10 hover:rotate-90 transition-all"><X size={32}/></button>
+           <div className="max-w-4xl text-center">
+              <h2 className="text-4xl font-black italic mb-10">ACME Academy: Asset Mastery</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 text-left">
+                 <div className="p-8 bg-white/5 rounded-3xl border border-white/10">
+                    <Zap className="text-secondary mb-4" />
+                    <h4 className="font-black italic mb-2 uppercase">Leveraging APY</h4>
+                    <p className="text-xs text-slate-400">Learn how to maximize ACME's High-Yield rates through compounding.</p>
                  </div>
-                 <div className="grid grid-cols-2 gap-4">
-                    <div>
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Rate (e.g. 0.08)</label>
-                       <input 
-                        type="number" 
-                        step="0.01"
-                        className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-secondary transition-all font-bold"
-                        value={calcInputs.rate}
-                        onChange={(e) => setCalcInputs({...calcInputs, rate: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">Time (Years)</label>
-                       <input 
-                        type="number" 
-                        className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-secondary transition-all font-bold"
-                        value={calcInputs.years}
-                        onChange={(e) => setCalcInputs({...calcInputs, years: e.target.value})}
-                      />
-                    </div>
+                 <div className="p-8 bg-white/5 rounded-3xl border border-white/10">
+                    <Target className="text-emerald-400 mb-4" />
+                    <h4 className="font-black italic mb-2 uppercase">Risk Management</h4>
+                    <p className="text-xs text-slate-400">Discover institutional techniques for shielding capital from volatility.</p>
                  </div>
               </div>
-
-              {calcResult && (
-                 <div className="p-6 bg-secondary/10 rounded-3xl mb-8 animate-in slide-in-from-bottom-2">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1 opacity-60">Projected Future Value</p>
-                    <p className="text-3xl font-black text-primary">${Math.round(calcResult).toLocaleString()}</p>
-                 </div>
-              )}
-
-              <button onClick={handleCalculate} className="w-full py-5 bg-primary text-white rounded-[1.5rem] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">Run Intelligence Model</button>
            </div>
         </div>
       )}
 
-      {/* Audit Ledger Modal */}
-      {hubData?.auditLogs && (
-        <div className="fixed inset-0 bg-primary/40 backdrop-blur-md z-[100] hidden group-hover:flex items-center justify-center p-6 animate-in fade-in">
-           {/* This would be triggered by clicking the Audit card */}
+      {/* Trade Sandbox Overlay */}
+      {showTradeSandbox && (
+        <div className="fixed inset-0 bg-primary/40 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in">
+           <div className="bg-white w-full max-w-2xl rounded-[3rem] p-10 shadow-2xl relative">
+              <button onClick={() => setShowTradeSandbox(false)} className="absolute top-8 right-8"><X size={24}/></button>
+              <h3 className="text-2xl font-black italic mb-8 flex items-center gap-2"><TrendingUp className="text-secondary" /> Trading Sandbox</h3>
+              <div className="space-y-4">
+                 {STOCKS.map(s => (
+                    <div key={s.symbol} className="flex justify-between items-center p-6 bg-slate-50 rounded-2xl hover:scale-[1.02] transition-all">
+                       <div><p className="font-black">{s.symbol}</p><p className="text-[10px] text-slate-400 font-bold uppercase">{s.name}</p></div>
+                       <div className="text-right"><p className="font-black">${s.price}</p><p className="text-[10px] font-black text-green-500">{s.trend}</p></div>
+                    </div>
+                 ))}
+              </div>
+           </div>
         </div>
       )}
 
-      {/* Institutional Audit Ledger (Visible in Hub) */}
-      <section className="mt-12">
-         <h3 className="text-xl font-black text-primary uppercase tracking-tight italic mb-6 flex items-center gap-3">
-            <ShieldCheck className="text-blue-500" /> Operational Audit Trail
-         </h3>
-         <div className="bg-white border-2 border-slate-50 rounded-[2.5rem] overflow-hidden shadow-sm">
-            <table className="w-full text-left">
-               <thead className="bg-slate-50/50 border-b border-slate-50">
+      {/* Invest Modal */}
+      {showInvestModal && (
+        <div className="fixed inset-0 bg-primary/20 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+           <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] text-center shadow-3xl">
+              <h3 className="text-xl font-black mb-2 italic">Acquire High-Yield Assets</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Move Capital from Savings</p>
+              <input type="number" value={investAmount} onChange={e => setInvestAmount(e.target.value)} className="w-full p-6 bg-slate-50 border-2 rounded-2xl text-3xl font-black text-center mb-8" placeholder="0.00" />
+              <div className="grid grid-cols-2 gap-4">
+                 <button onClick={() => setShowInvestModal(false)} className="py-4 bg-slate-100 font-black rounded-xl uppercase text-xs">Cancel</button>
+                 <button onClick={handleInvest} className="py-4 bg-primary text-white font-black rounded-xl uppercase text-xs">Invest Now</button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Goal Modal */}
+      {showGoalModal && (
+        <div className="fixed inset-0 bg-primary/10 backdrop-blur-sm z-[200] flex items-center justify-center p-6">
+           <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl">
+              <h3 className="text-xl font-black mb-6 italic text-center">Set Institutional Goal</h3>
+              <input type="text" placeholder="Goal Name (e.g. Asset Accumulation)" value={goalName} onChange={e => setGoalName(e.target.value)} className="w-full p-4 bg-slate-50 rounded-xl mb-4 text-sm font-bold" />
+              <input type="number" placeholder="Target GHS" value={goalTarget} onChange={e => setGoalTarget(e.target.value)} className="w-full p-4 bg-slate-50 rounded-xl mb-8 text-sm font-bold" />
+              <div className="grid grid-cols-2 gap-4">
+                 <button onClick={() => setShowGoalModal(false)} className="py-4 bg-slate-100 rounded-xl font-black uppercase text-xs">Cancel</button>
+                 <button onClick={handleCreateGoal} className="py-4 bg-emerald-500 text-white rounded-xl font-black uppercase text-xs">Establish</button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {/* Loan Modal */}
+      {showLoanModal && (
+        <div className="fixed inset-0 bg-primary/20 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+           <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl text-center">
+              <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6"><Banknote size={32}/></div>
+              <h3 className="text-xl font-black mb-2 italic">Institutional Credit</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Request Unsecured High-Limit Capital</p>
+              <input type="number" value={loanAmount} onChange={e => setLoanAmount(e.target.value)} className="w-full p-6 bg-slate-50 border-2 rounded-2xl text-2xl font-black text-center mb-8" placeholder="Enter Amount" />
+              <div className="grid grid-cols-2 gap-4">
+                 <button onClick={() => setShowLoanModal(false)} className="py-4 bg-slate-100 rounded-xl font-black uppercase text-xs">Abort</button>
+                 <button onClick={handleApplyLoan} className="py-4 bg-blue-500 text-white rounded-xl font-black uppercase text-xs">Submit Request</button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+         {/* Portfolio Performance */}
+         <div className="lg:col-span-8 space-y-10">
+            <section className="bg-white p-10 rounded-[3rem] border-2 border-slate-50 shadow-sm relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-10 opacity-[0.03]"><TrendingUp size={240}/></div>
+               <div className="flex justify-between items-end mb-10 relative z-10">
+                  <div>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Portfolio Allocation</p>
+                     <h3 className="text-4xl font-black text-primary italic">Strategic Asset Map</h3>
+                  </div>
+                  <button onClick={() => setShowInvestModal(true)} className="px-8 py-3 bg-primary text-secondary font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">Capital Relocation</button>
+               </div>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                  <div className="h-[280px]">
+                     <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                           <Pie data={pieData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                              {pieData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                           </Pie>
+                           <RechartsTooltip />
+                        </PieChart>
+                     </ResponsiveContainer>
+                  </div>
+                  <div className="flex flex-col justify-center space-y-6">
+                     {pieData.map((d, i) => (
+                        <div key={d.name} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                           <div className="flex items-center gap-3">
+                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
+                              <span className="text-xs font-black uppercase text-slate-800">{d.name}</span>
+                           </div>
+                           <span className="font-bold text-primary italic text-sm">GHS {d.value.toLocaleString()}</span>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+            </section>
+
+            {/* Savings Goals */}
+            <section>
+               <div className="flex justify-between items-center mb-6 px-4">
+                  <h3 className="text-xl font-black text-primary italic flex items-center gap-2"><Target className="text-secondary"/> Wealth Accumulation</h3>
+                  <button onClick={() => setShowGoalModal(true)} className="p-2 bg-secondary/10 text-primary rounded-xl hover:bg-secondary/20 transition-all"><Plus size={20}/></button>
+               </div>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                  {hubData?.savingsGoals?.map(goal => (
+                     <div key={goal.id} className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-50 shadow-sm relative overflow-hidden group">
+                        <div className="flex justify-between items-center mb-6">
+                           <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center"><Target size={24}/></div>
+                           <span className="text-xs font-black text-emerald-500 italic">{(goal.currentAmount / goal.targetAmount * 100).toFixed(0)}%</span>
+                        </div>
+                        <h4 className="font-black text-primary mb-1 uppercase text-sm">{goal.name}</h4>
+                        <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+                           <span>GHS {goal.currentAmount.toLocaleString()}</span>
+                           <span>Target: {goal.targetAmount.toLocaleString()}</span>
+                        </div>
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                           <div className="h-full bg-emerald-500 transition-all duration-1000" style={{ width: `${(goal.currentAmount / goal.targetAmount * 100)}%` }}></div>
+                        </div>
+                     </div>
+                  ))}
+                  {(!hubData?.savingsGoals || hubData.savingsGoals.length === 0) && (
+                    <div className="col-span-2 p-10 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 text-center">
+                       <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No active accumulation targets.</p>
+                       <button onClick={() => setShowGoalModal(true)} className="mt-4 text-[10px] font-black text-primary uppercase underline">Initialize First Goal</button>
+                    </div>
+                  )}
+               </div>
+            </section>
+         </div>
+
+         {/* Right Column: Intelligence & Actions */}
+         <div className="lg:col-span-4 space-y-10">
+            {/* Quick Actions */}
+            <section className="bg-secondary/10 p-8 rounded-[3rem] border border-secondary/20">
+               <h4 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-6 italic text-center">Institutional Actions</h4>
+               <div className="grid grid-cols-1 gap-4">
+                  <Link to="/bill-pay" className="flex items-center justify-between p-5 bg-white/80 rounded-2xl hover:bg-white transition-all shadow-sm border border-secondary/10 group">
+                     <span className="font-black italic text-xs">Easy-Pay Hub</span>
+                     <ArrowRight size={16} className="text-primary group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                  <button onClick={() => setShowLoanModal(true)} className="flex items-center justify-between p-5 bg-primary text-secondary rounded-2xl hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">
+                     <span className="font-black italic text-xs uppercase tracking-widest">Institutional Credit</span>
+                     <CreditCard size={18} />
+                  </button>
+               </div>
+            </section>
+
+            {/* Growth Projector */}
+            <section className="bg-slate-900 p-10 rounded-[3rem] text-white overflow-hidden relative shadow-2xl">
+               <div className="absolute top-0 right-0 p-8 opacity-10"><Calculator size={120}/></div>
+               <h3 className="text-lg font-black italic mb-8 flex items-center gap-3"><Zap className="text-secondary"/> Growth Engine</h3>
+               <div className="space-y-6 relative z-10">
+                  <div>
+                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Base Principal (GHS)</label>
+                     <input type="number" value={calcInputs.principal} onChange={e => setCalcInputs({...calcInputs, principal: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-bold text-sm" />
+                  </div>
+                  <div>
+                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Annual APY (%)</label>
+                     <input type="number" value={calcInputs.rate} onChange={e => setCalcInputs({...calcInputs, rate: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-bold text-sm" />
+                  </div>
+                  <button onClick={handleCalculate} className="w-full py-4 bg-primary text-secondary font-black rounded-xl text-xs uppercase transition-all hover:bg-white hover:text-primary">Simulate Valuation</button>
+                  {calcResult && (
+                    <div className="pt-6 border-t border-white/10 text-center animate-in slide-in-from-top-4">
+                       <p className="text-[10px] font-black text-slate-400 uppercase mb-1 tracking-widest">Projected Horizon Valuation</p>
+                       <p className="text-3xl font-black text-secondary font-mono italic">GHS {parseFloat(calcResult).toLocaleString()}</p>
+                    </div>
+                  )}
+               </div>
+            </section>
+
+            {/* Teaching Sandboxes */}
+            <section className="space-y-6">
+               <div onClick={() => setShowAcademy(true)} className="bg-gradient-to-br from-emerald-500 to-teal-600 p-8 rounded-[2.5rem] text-white shadow-xl cursor-pointer hover:scale-[1.02] transition-all group">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.3em] mb-4">ACME Academy</h4>
+                  <p className="text-xl font-black italic leading-tight">Master Institutional Strategy</p>
+               </div>
+               <div onClick={() => setShowTradeSandbox(true)} className="bg-white border-2 border-slate-50 p-8 rounded-[2.5rem] shadow-sm cursor-pointer hover:border-blue-100 hover:scale-[1.02] transition-all group">
+                  <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] mb-4">Trade Sandbox</h4>
+                  <p className="text-xl font-black text-primary italic leading-tight">Teaching Social Equity</p>
+               </div>
+            </section>
+         </div>
+      </div>
+
+      {/* Audit Ledger */}
+      <section className="mt-16">
+         <h4 className="text-xl font-black text-primary italic mb-8 flex items-center gap-2"><ShieldCheck size={24}/> Operational Audit Trail</h4>
+         <div className="bg-white rounded-[2.5rem] border-2 border-slate-50 overflow-hidden">
+            <table className="w-full text-left text-xs">
+               <thead className="bg-slate-50">
                   <tr>
-                     <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Timestamp</th>
-                     <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Event</th>
-                     <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actor</th>
-                     <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Detail Summary</th>
+                     <th className="p-6 font-black uppercase text-slate-400 tracking-widest">Time</th>
+                     <th className="p-6 font-black uppercase text-slate-400 tracking-widest">Event</th>
+                     <th className="p-6 font-black uppercase text-slate-400 tracking-widest">Context</th>
                   </tr>
                </thead>
                <tbody className="divide-y divide-slate-50">
                   {hubData?.auditLogs?.slice(0, 5).map(log => (
                      <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="p-6 text-xs font-bold text-slate-400">{new Date(log.timestamp).toLocaleString()}</td>
-                        <td className="p-6">
-                           <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
-                              log.action.includes('LOGIN') ? 'bg-blue-100 text-blue-600' : 'bg-amber-100 text-amber-600'
-                           }`}>{log.action}</span>
-                        </td>
-                        <td className="p-6 text-xs font-black text-primary uppercase tracking-tight">{log.username}</td>
-                        <td className="p-6 text-xs text-slate-500">{log.details}</td>
+                        <td className="p-6 text-slate-500 font-bold">{new Date(log.timestamp).toLocaleTimeString()}</td>
+                        <td className="p-6"><span className="px-3 py-1 bg-primary/5 text-primary rounded-full font-black uppercase text-[10px] tracking-widest">{log.action}</span></td>
+                        <td className="p-6 font-medium text-slate-600">{log.details}</td>
                      </tr>
                   ))}
                </tbody>
             </table>
-            <div className="p-6 bg-slate-50/30 text-center border-t border-slate-50">
-               <button className="text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:opacity-70 transition-opacity">Request Full Compliance Log</button>
-            </div>
          </div>
       </section>
     </Layout>

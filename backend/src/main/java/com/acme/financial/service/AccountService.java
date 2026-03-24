@@ -35,11 +35,23 @@ public class AccountService {
         return repository.findByAccountNumber(accountNumber);
     }
 
+    @Transactional
     public Account createAccount(User user, AccountType type) {
+        // Enforce singleton account per type logic
+        List<Account> existing = repository.findByUser(user);
+        boolean alreadyExists = existing.stream().anyMatch(a -> a.getType() == type);
+        
+        if (alreadyExists) {
+            throw new RuntimeException("Operational Limit: You already possess a signature ACME " + type + " account. Only one account of each type is permitted for security integrity.");
+        }
+
+        // Auto-initialize balance for Institutional Onboarding
+        BigDecimal initialBalance = type == AccountType.INVESTMENT ? BigDecimal.ZERO : new BigDecimal("100.00");
+
         Account account = Account.builder()
                 .user(user)
                 .accountNumber(generateAccountNumber())
-                .balance(new BigDecimal("100.00")) // Small bonus for new account
+                .balance(initialBalance)
                 .type(type)
                 .frozen(false)
                 .build();

@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class FinancialHubService {
@@ -16,15 +18,18 @@ public class FinancialHubService {
     private final InvestmentRepository investmentRepository;
     private final LoanRepository loanRepository;
     private final AuditLogRepository auditLogRepository;
+    private final AccountRepository accountRepository;
 
     public FinancialHubService(SavingsGoalRepository savingsGoalRepository,
                                InvestmentRepository investmentRepository,
                                LoanRepository loanRepository,
-                               AuditLogRepository auditLogRepository) {
+                               AuditLogRepository auditLogRepository,
+                               AccountRepository accountRepository) {
         this.savingsGoalRepository = savingsGoalRepository;
         this.investmentRepository = investmentRepository;
         this.loanRepository = loanRepository;
         this.auditLogRepository = auditLogRepository;
+        this.accountRepository = accountRepository;
     }
 
     @Transactional(readOnly = true)
@@ -45,6 +50,44 @@ public class FinancialHubService {
     }
 
     @Transactional
+    public void invest(User user, BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Investment amount must be positive");
+        }
+
+        List<Account> accounts = accountRepository.findByUser_Id(user.getId());
+        Account savings = accounts.stream()
+            .filter(a -> a.getType() == AccountType.SAVINGS)
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Operational Fault: No ACME Savings account located to source funds."));
+        
+        Account investmentAcc = accounts.stream()
+            .filter(a -> a.getType() == AccountType.INVESTMENT)
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Operational Fault: No ACME Investment account located. Please open one first."));
+
+        if (savings.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient Liquidity: Your Savings account does not Have enough capital.");
+        }
+
+        savings.setBalance(savings.getBalance().subtract(amount));
+        investmentAcc.setBalance(investmentAcc.getBalance().add(amount));
+
+        accountRepository.save(savings);
+        accountRepository.save(investmentAcc);
+
+        // Record for tracking
+        Investment inv = new Investment();
+        inv.setUser(user);
+        inv.setAmount(amount);
+        inv.setAssetType("ACME_HIGH_YIELD_FUNDS");
+        inv.setStatus("GROWING");
+        investmentRepository.save(inv);
+
+        auditLogRepository.save(new AuditLog("ASSET_INVEST", user.getUsername(), "Invested $" + amount + " from savings", "Internal"));
+    }
+
+    @Transactional
     public SavingsGoal createGoal(User user, String name, BigDecimal target, String icon) {
         SavingsGoal goal = new SavingsGoal();
         goal.setUser(user);
@@ -61,19 +104,31 @@ public class FinancialHubService {
         loan.setUser(user);
         loan.setPrincipalAmount(amount);
         loan.setRemainingBalance(amount);
-        loan.setInterestRate(new BigDecimal("0.08")); // Fixed 8% for demo
+        loan.setInterestRate(new BigDecimal("0.08"));
         loan.setStartDate(LocalDateTime.now());
         loan.setDurationInMonths(months);
         loan.setStatus("ACTIVE");
-        
-        // Audit log the loan
-        auditLogRepository.save(new AuditLog("LOAN_REQUST", user.getUsername(), "Requested $" + amount + " for " + months + " months", "0.0.0.0"));
-        
+        auditLogRepository.save(new AuditLog("LOAN_REQUEST", user.getUsername(), "Requested $" + amount, "Internal"));
         return loanRepository.save(loan);
     }
 
     @Transactional
     public void recordAction(String action, String username, String details, String ip) {
         auditLogRepository.save(new AuditLog(action, username, details, ip));
+    }
+
+    @Transactional
+    public void processGlobalInterest() {
+        List<Account> investments = accountRepository.findAll().stream()
+            .filter(a -> a.getType() == AccountType.INVESTMENT)
+            .collect(Collectors.toList());
+
+        for (Account acc : investments) {
+            BigDecimal rate = new BigDecimal("0.05");
+            if (acc.getBalance().compareTo(new BigDecimal("1000")) > 0) rate = new BigDecimal("0.08");
+            BigDecimal growth = acc.getBalance().multiply(rate).divide(new BigDecimal("100"), 4, java.math.RoundingMode.HALF_UP);
+            acc.setBalance(acc.getBalance().add(growth));
+            accountRepository.save(acc);
+        }
     }
 }

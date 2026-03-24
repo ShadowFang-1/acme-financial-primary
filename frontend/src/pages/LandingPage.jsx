@@ -150,8 +150,15 @@ const Team = () => (
     <div className="max-w-7xl mx-auto px-6">
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8 text-center md:text-left">
         <div className="max-w-2xl">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 text-primary tracking-tighter italic uppercase underline decoration-secondary decoration-4 underline-offset-8">Led by Pioneers.</h2>
-          <p className="text-base sm:text-lg text-slate-600 font-medium leading-relaxed mt-4 sm:mt-12">Meet the visionaries behind the ACME revolution. Our leadership combines decades of experience in traditional finance and disruptive tech.</p>
+            <h1 className="text-5xl md:text-7xl lg:text-[6rem] font-black leading-[0.9] text-primary mb-8 tracking-tighter italic animate-in slide-in-from-left-4 duration-700">
+              ACME <br />
+              <span className="text-secondary">FINANCIAL</span> <br />
+              SYSTEMS.
+            </h1>
+            <p className="text-lg md:text-xl text-slate-500 max-w-xl font-medium leading-relaxed mb-10 animate-in slide-in-from-left-4 duration-1000">
+              Institutional wealth management for the next generation of financial pioneers. 
+              The ACME Engine powers high-velocity capital operations worldwide.
+            </p>
         </div>
         <button className="btn-outline font-black uppercase tracking-widest text-xs py-4 px-8 border-2">Explore the Collective</button>
       </div>
