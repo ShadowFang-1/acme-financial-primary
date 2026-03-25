@@ -77,7 +77,7 @@ const BillPayment = () => {
   };
 
   return (
-    <Layout title="Zenith Easy-Pay" subtitle="Automated Bill & Subscription Management" hideSearch hideBell>
+    <Layout title="ACME Easy-Pay" subtitle="Automated Bill & Subscription Management" hideSearch hideBell>
       <div className="max-w-4xl mx-auto py-8 px-4">
         
         {step === 'success' ? (
@@ -114,7 +114,7 @@ const BillPayment = () => {
                    <ShieldCheck className="text-secondary" /> Institutional Subscriptions
                 </h3>
                 <div className="space-y-4 relative z-10">
-                   {['Zenith Prime', 'Bloomberg Terminal (LITE)', 'Vault Protection'].map(sub => (
+                   {['ACME Prime', 'Bloomberg Terminal (LITE)', 'Vault Protection'].map(sub => (
                       <div key={sub} className="flex justify-between items-center bg-white/5 p-5 rounded-2xl hover:bg-white/10 transition-colors">
                          <span className="font-black uppercase tracking-widest text-xs">{sub}</span>
                          <span className="text-[10px] font-bold text-secondary px-3 py-1 bg-secondary/10 rounded-full border border-secondary/20">Active</span>

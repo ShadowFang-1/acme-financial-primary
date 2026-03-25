@@ -266,7 +266,7 @@ public class FinancialHubService {
     }
 
     @Transactional
-    public Loan requestLoan(User user, BigDecimal amount, Integer months) {
+    public Loan requestLoan(User user, BigDecimal amount, Integer months, String repaymentFrequency) {
         User managedUser = userRepository.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Institutional Fault: Session integrity failed."));
 
@@ -275,17 +275,38 @@ public class FinancialHubService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         
         if (totalBalance.compareTo(new BigDecimal("500.00")) < 0) {
-            throw new RuntimeException("Liquidity Insufficient: A $500 total reserve is required for credit authorization.");
+            throw new RuntimeException("Liquidity Insufficient: A GHS 500 total reserve is required for credit authorization.");
         }
+
+        // Calculate total with interest (8% APR)
+        BigDecimal interestRate = new BigDecimal("0.08");
+        BigDecimal totalWithInterest = amount.multiply(BigDecimal.ONE.add(interestRate.multiply(new BigDecimal(months)).divide(new BigDecimal("12"), 4, java.math.RoundingMode.HALF_UP)));
+
+        // Calculate repayment amount per period
+        String freq = repaymentFrequency != null ? repaymentFrequency : "MONTHLY";
+        int periodsPerYear;
+        switch (freq) {
+            case "DAILY": periodsPerYear = 365; break;
+            case "WEEKLY": periodsPerYear = 52; break;
+            case "YEARLY": periodsPerYear = 1; break;
+            default: periodsPerYear = 12; break;
+        }
+        int totalPeriods = (int) Math.ceil((months / 12.0) * periodsPerYear);
+        if (totalPeriods <= 0) totalPeriods = 1;
+        BigDecimal repaymentAmount = totalWithInterest.divide(new BigDecimal(totalPeriods), 2, java.math.RoundingMode.CEILING);
 
         Loan loan = new Loan();
         loan.setUser(managedUser);
         loan.setPrincipalAmount(amount);
-        loan.setRemainingBalance(amount);
-        loan.setInterestRate(new BigDecimal("0.08"));
+        loan.setRemainingBalance(totalWithInterest);
+        loan.setInterestRate(interestRate);
         loan.setStartDate(LocalDateTime.now());
         loan.setDurationInMonths(months);
         loan.setStatus("ACTIVE");
+        loan.setRepaymentFrequency(freq);
+        loan.setRepaymentAmount(repaymentAmount);
+        loan.setNextRepaymentDate(calculateNextRepayment(freq, LocalDateTime.now()));
+        loan.setClosingDate(LocalDateTime.now().plusMonths(months));
         Loan savedLoan = loanRepository.save(loan);
 
         Account savings = accountRepository.findByUser(managedUser).stream()
@@ -306,7 +327,7 @@ public class FinancialHubService {
         transactionRepository.save(trans);
 
         // Notify
-        String logMsg = "Loan of " + amount + " authorized and credited to Savings vault.";
+        String logMsg = "Loan of GHS " + amount + " authorized. Repayment: GHS " + repaymentAmount + " " + freq + ". Closing: " + loan.getClosingDate().toLocalDate();
         notificationService.notify(managedUser, "Credit Hub: Loan Authorized", logMsg);
         emailService.sendEmail(managedUser.getEmail(), "ACME Financial Hub: Loan Alert", logMsg);
         recordAction("CREDIT_AUTHORIZED", managedUser.getUsername(), logMsg, "CREDIT_POOL");
@@ -315,22 +336,61 @@ public class FinancialHubService {
     }
 
     @Transactional
-    public void recordAction(String action, String username, String details, String ip) {
-        auditLogRepository.save(new AuditLog(action, username, details, ip));
+    public void withdrawGoal(User user, Long goalId) {
+        User managedUser = userRepository.findByEmail(user.getUsername())
+                .orElseThrow(() -> new RuntimeException("Session Error: Identity not located."));
+
+        SavingsGoal goal = savingsGoalRepository.findById(goalId)
+                .orElseThrow(() -> new RuntimeException("Goal not found."));
+
+        BigDecimal percentage = BigDecimal.ZERO;
+        if (goal.getTargetAmount().compareTo(BigDecimal.ZERO) > 0) {
+            percentage = goal.getCurrentAmount().multiply(new BigDecimal("100"))
+                .divide(goal.getTargetAmount(), 0, java.math.RoundingMode.DOWN);
+        }
+        if (percentage.compareTo(new BigDecimal("100")) < 0) {
+            throw new RuntimeException("Goal is only " + percentage + "% funded. Must be 100% to withdraw.");
+        }
+
+        BigDecimal withdrawAmount = goal.getCurrentAmount();
+
+        Account savings = accountRepository.findByUser(managedUser).stream()
+            .filter(a -> a.getType() == AccountType.SAVINGS)
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("No Savings account found."));
+
+        savings.setBalance(savings.getBalance().add(withdrawAmount));
+        goal.setCurrentAmount(BigDecimal.ZERO);
+        accountRepository.save(savings);
+        savingsGoalRepository.save(goal);
+
+        Transaction trans = Transaction.builder()
+            .receiverAccount(savings)
+            .amount(withdrawAmount)
+            .description("Goal Withdrawal: " + goal.getName() + " (Fully Funded)")
+            .type(TransactionType.DEPOSIT)
+            .build();
+        transactionRepository.save(trans);
+
+        String logMsg = "Withdrew GHS " + withdrawAmount + " from completed goal '" + goal.getName() + "' to Savings.";
+        notificationService.notify(managedUser, "Goal Funds Withdrawn", logMsg);
+        emailService.sendEmail(managedUser.getEmail(), "ACME: Goal Funds Withdrawn", logMsg);
+        recordAction("GOAL_WITHDRAWAL", managedUser.getUsername(), logMsg, "HUB_SYSTEM");
+    }
+
+    private LocalDateTime calculateNextRepayment(String frequency, LocalDateTime from) {
+        return switch (frequency) {
+            case "DAILY" -> from.plusDays(1);
+            case "WEEKLY" -> from.plusWeeks(1);
+            case "MONTHLY" -> from.plusMonths(1);
+            case "YEARLY" -> from.plusYears(1);
+            default -> from.plusMonths(1);
+        };
     }
 
     @Transactional
-    public void processGlobalInterest() {
-        List<Account> investments = accountRepository.findAll().stream()
-            .filter(a -> a.getType() == AccountType.INVESTMENT)
-            .collect(Collectors.toList());
-
-        for (Account acc : investments) {
-            BigDecimal rate = new BigDecimal("0.05");
-            if (acc.getBalance().compareTo(new BigDecimal("1000")) > 0) rate = new BigDecimal("0.08");
-            BigDecimal growth = acc.getBalance().multiply(rate).divide(new BigDecimal("100"), 4, java.math.RoundingMode.HALF_UP);
-            acc.setBalance(acc.getBalance().add(growth));
-            accountRepository.save(acc);
-        }
+    public void recordAction(String action, String username, String details, String ip) {
+        auditLogRepository.save(new AuditLog(action, username, details, ip));
     }
 }
+

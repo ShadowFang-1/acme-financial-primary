@@ -19,10 +19,16 @@ public class Loan {
 
     private BigDecimal principalAmount;
     private BigDecimal remainingBalance;
-    private BigDecimal interestRate; // e.g., 0.05 for 5%
+    private BigDecimal interestRate; // e.g., 0.08 for 8%
     private LocalDateTime startDate;
     private Integer durationInMonths;
     private String status; // "PENDING", "ACTIVE", "COMPLETED"
+
+    // Auto-repayment schedule
+    private String repaymentFrequency; // DAILY, WEEKLY, MONTHLY, YEARLY
+    private LocalDateTime nextRepaymentDate;
+    private LocalDateTime closingDate; // Final deadline for full repayment
+    private BigDecimal repaymentAmount; // Amount per scheduled payment
 
     public Loan() {}
 
@@ -43,4 +49,12 @@ public class Loan {
     public void setDurationInMonths(Integer durationInMonths) { this.durationInMonths = durationInMonths; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public String getRepaymentFrequency() { return repaymentFrequency; }
+    public void setRepaymentFrequency(String repaymentFrequency) { this.repaymentFrequency = repaymentFrequency; }
+    public LocalDateTime getNextRepaymentDate() { return nextRepaymentDate; }
+    public void setNextRepaymentDate(LocalDateTime nextRepaymentDate) { this.nextRepaymentDate = nextRepaymentDate; }
+    public LocalDateTime getClosingDate() { return closingDate; }
+    public void setClosingDate(LocalDateTime closingDate) { this.closingDate = closingDate; }
+    public BigDecimal getRepaymentAmount() { return repaymentAmount; }
+    public void setRepaymentAmount(BigDecimal repaymentAmount) { this.repaymentAmount = repaymentAmount; }
 }

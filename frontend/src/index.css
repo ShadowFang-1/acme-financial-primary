@@ -111,7 +111,7 @@
 /* Authentication System - Sliding & Animated */
 .auth-container {
   @apply min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden;
-  background-color: #001a33; /* ZENITH Deep Navy */
+  background-color: #001a33; /* ACME Deep Navy */
 }
 
 /* Animated Mesh Background */

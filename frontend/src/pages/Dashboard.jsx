@@ -263,7 +263,7 @@ const Dashboard = () => {
       <div id="receipt-area" className="hidden">
         <div style={{ padding: '40px', background: 'white', color: 'black', fontFamily: 'serif', maxWidth: '600px', margin: 'auto', border: '2px solid #EEE' }}>
           <div style={{ textAlign: 'center', marginBottom: '30px', borderBottom: '2px solid #0F172A', paddingBottom: '20px' }}>
-            <h1 style={{ margin: '0', fontSize: '28px', color: '#0F172A' }}>ZENITH GLOBAL</h1>
+            <h1 style={{ margin: '0', fontSize: '28px', color: '#0F172A' }}>ACME FINANCIAL</h1>
             <p style={{ margin: '5px', fontSize: '12px', letterSpacing: '2px' }}>OFFICIAL LEDGER RECEIPT</p>
           </div>
           
@@ -285,7 +285,7 @@ const Dashboard = () => {
           
           <div style={{ marginTop: '40px', textAlign: 'center', opacity: '0.4', fontSize: '10px' }}>
             <p>This is a system generated document. End-to-End Encrypted Verification.</p>
-            <p>© 2026 ZENITH GLOBAL GROUP</p>
+            <p>© 2026 ACME FINANCIAL GROUP</p>
           </div>
         </div>
       </div>

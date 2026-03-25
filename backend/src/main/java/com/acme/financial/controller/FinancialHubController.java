@@ -91,12 +91,30 @@ public class FinancialHubController {
     }
 
     @PostMapping("/loans/apply")
-    public ResponseEntity<Loan> applyForLoan(
+    public ResponseEntity<?> applyForLoan(
             @AuthenticationPrincipal User user,
             @RequestParam BigDecimal amount,
-            @RequestParam Integer months
+            @RequestParam Integer months,
+            @RequestParam(required = false, defaultValue = "MONTHLY") String repaymentFrequency
     ) {
-        return ResponseEntity.ok(hubService.requestLoan(user, amount, months));
+        try {
+            return ResponseEntity.ok(hubService.requestLoan(user, amount, months, repaymentFrequency));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/savings/withdraw")
+    public ResponseEntity<?> withdrawGoal(
+            @AuthenticationPrincipal User user,
+            @RequestParam Long goalId
+    ) {
+        try {
+            hubService.withdrawGoal(user, goalId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", e.getMessage()));
+        }
     }
 
     @GetMapping("/calculator/compound")
@@ -105,7 +123,6 @@ public class FinancialHubController {
             @RequestParam BigDecimal rate, 
             @RequestParam Integer years
     ) {
-        // A = P(1 + r)^t
         double p = principal.doubleValue();
         double r = rate.doubleValue();
         double t = years.doubleValue();

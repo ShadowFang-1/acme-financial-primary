@@ -39,7 +39,7 @@ public class TransactionService {
         // 1. Find Recipient
         java.util.List<User> recipients = userRepository.findByIdentifier(identifier);
         if (recipients.isEmpty()) {
-            throw new RuntimeException("Zenith Pay Error: No user found with ID '" + identifier + "'");
+            throw new RuntimeException("ACME Pay Error: No user found with ID '" + identifier + "'");
         }
         User recipient = recipients.get(0);
 
@@ -51,14 +51,14 @@ public class TransactionService {
         // 3. Find Recipients Primary Account
         Account toAccount = accountRepository.findByUser_Id(recipient.getId()).stream()
             .findFirst()
-            .orElseThrow(() -> new RuntimeException("Recipient has no active Zenith accounts"));
+            .orElseThrow(() -> new RuntimeException("Recipient has no active ACME accounts"));
 
         // 4. Execute Transfer
         TransferRequest req = new TransferRequest();
         req.setFromAccountNumber(fromAccount.getAccountNumber());
         req.setToAccountNumber(toAccount.getAccountNumber());
         req.setAmount(amount);
-        req.setDescription(description != null ? description : "P2P Zenith Pay via " + identifier);
+        req.setDescription(description != null ? description : "P2P ACME Pay via " + identifier);
         
         transfer(sender, req);
     }
