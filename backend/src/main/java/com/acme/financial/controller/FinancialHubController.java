@@ -75,6 +75,21 @@ public class FinancialHubController {
         }
     }
 
+    @PostMapping("/savings/contribute")
+    public ResponseEntity<?> contributeToGoal(
+            @AuthenticationPrincipal User user,
+            @RequestParam Long goalId,
+            @RequestParam BigDecimal amount
+    ) {
+        try {
+            hubService.contributeToGoal(user, goalId, amount);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @PostMapping("/loans/apply")
     public ResponseEntity<Loan> applyForLoan(
             @AuthenticationPrincipal User user,

@@ -101,13 +101,16 @@ const Dashboard = () => {
     fetchData();
   }, [activeAccountIndex]);
 
-  const handleCreateAccount = async () => {
+  const [showNewAccountModal, setShowNewAccountModal] = useState(false);
+
+  const handleCreateAccount = async (type = 'SAVINGS') => {
     try {
-      await axios.post('/api/v1/banking/accounts?type=SAVINGS');
-      showToast('New Savings Account opened successfully!');
+      await axios.post(`/api/v1/banking/accounts?type=${type}`);
+      showToast(`New ${type} Account opened successfully!`);
+      setShowNewAccountModal(false);
       fetchData();
     } catch (err) {
-      showToast('Failed to open account', 'error');
+      showToast(err.response?.data?.message || 'Failed to open account', 'error');
     }
   };
 
@@ -551,13 +554,51 @@ const Dashboard = () => {
         </div>
       )}
 
+      {/* Open New Account Modal */}
+      {showNewAccountModal && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-8">
+               <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter italic">Open New Account</h3>
+               <button onClick={() => setShowNewAccountModal(false)} className="p-2 hover:bg-slate-100 rounded-full"><X size={20} className="text-slate-400" /></button>
+            </div>
+            <div className="space-y-4">
+               <button 
+                 onClick={() => handleCreateAccount('SAVINGS')}
+                 className="w-full flex items-center gap-5 p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 hover:border-primary hover:bg-primary/5 transition-all group"
+               >
+                 <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                   <Wallet size={24} />
+                 </div>
+                 <div className="text-left">
+                   <p className="font-black text-primary text-sm uppercase tracking-widest">Savings Account</p>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Standard deposit & withdrawal</p>
+                 </div>
+               </button>
+               <button 
+                 onClick={() => handleCreateAccount('INVESTMENT')}
+                 className="w-full flex items-center gap-5 p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 hover:border-secondary hover:bg-secondary/5 transition-all group"
+               >
+                 <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                   <TrendingUp size={24} />
+                 </div>
+                 <div className="text-left">
+                   <p className="font-black text-primary text-sm uppercase tracking-widest">Investment Account</p>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">High-yield portfolio vault</p>
+                 </div>
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
         {/* Account Cards (Section 1) */}
         <div className="col-span-1 lg:col-span-8 space-y-6 sm:space-y-10">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 px-1">
             <h3 className="text-lg lg:text-2xl font-black text-primary uppercase tracking-tighter italic">Your Accounts</h3>
             <button 
-              onClick={handleCreateAccount}
+              onClick={() => setShowNewAccountModal(true)}
               className="px-6 py-2.5 bg-primary/5 text-[10px] font-black text-primary rounded-xl flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all group tracking-widest uppercase shadow-sm"
             >
               <Plus size={16} className="group-hover:rotate-90 transition-transform" /> <span className="sm:hidden">New Account</span><span className="hidden sm:inline">Open New Account</span>

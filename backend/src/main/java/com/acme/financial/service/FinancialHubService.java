@@ -223,6 +223,45 @@ public class FinancialHubService {
     }
 
     @Transactional
+    public void contributeToGoal(User user, Long goalId, BigDecimal amount) {
+        User managedUser = userRepository.findByEmail(user.getUsername())
+                .orElseThrow(() -> new RuntimeException("Session Error: Identity not located."));
+
+        SavingsGoal goal = savingsGoalRepository.findById(goalId)
+                .orElseThrow(() -> new RuntimeException("Goal not found."));
+
+        Account savings = accountRepository.findByUser(managedUser).stream()
+            .filter(a -> a.getType() == AccountType.SAVINGS)
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("No Savings account found."));
+
+        if (savings.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient funds in Savings to contribute.");
+        }
+
+        savings.setBalance(savings.getBalance().subtract(amount));
+        BigDecimal currentGoalAmount = goal.getCurrentAmount() != null ? goal.getCurrentAmount() : BigDecimal.ZERO;
+        goal.setCurrentAmount(currentGoalAmount.add(amount));
+        accountRepository.save(savings);
+        savingsGoalRepository.save(goal);
+
+        // Transaction History
+        Transaction trans = Transaction.builder()
+            .senderAccount(savings)
+            .amount(amount)
+            .description("Contribution to Goal: " + goal.getName())
+            .type(TransactionType.WITHDRAWAL)
+            .build();
+        transactionRepository.save(trans);
+
+        // Notify
+        String logMsg = "Contributed GHS " + amount + " to savings goal '" + goal.getName() + "'";
+        notificationService.notify(managedUser, "Goal Contribution", logMsg);
+        emailService.sendEmail(managedUser.getEmail(), "ACME Financial Hub: Goal Contribution", logMsg);
+        recordAction("GOAL_CONTRIBUTION", managedUser.getUsername(), logMsg, "HUB_SYSTEM");
+    }
+
+    @Transactional
     public Loan requestLoan(User user, BigDecimal amount, Integer months) {
         User managedUser = userRepository.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Institutional Fault: Session integrity failed."));

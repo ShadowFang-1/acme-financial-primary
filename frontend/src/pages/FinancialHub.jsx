@@ -38,10 +38,22 @@ const FinancialHub = () => {
   const [calcInputs, setCalcInputs] = useState({ principal: 1000, rate: 0.1, years: 5 });
   const [calcResult, setCalcResult] = useState(null);
 
+  // Toast notification system
+  const [toast, setToast] = useState(null);
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   const [showGoalModal, setShowGoalModal] = useState(false);
   const [goalName, setGoalName] = useState('');
   const [goalTarget, setGoalTarget] = useState('');
   
+  // Goal Contribution
+  const [showContributeModal, setShowContributeModal] = useState(false);
+  const [contributeGoalId, setContributeGoalId] = useState(null);
+  const [contributeAmount, setContributeAmount] = useState('');
+
   const [showLoanModal, setShowLoanModal] = useState(false);
   const [loanAmount, setLoanAmount] = useState('');
 
@@ -69,8 +81,7 @@ const FinancialHub = () => {
       setHubData(res.data);
     } catch (err) {
       console.error("Hub Error:", err);
-      const msg = err.response?.data?.message || "Operational Fault: High-Yield Summary Unavailable. Check session status.";
-      alert(msg);
+      showToast(err.response?.data?.message || "Hub data unavailable. Please check your session.", 'error');
     } finally {
       setLoading(false);
     }
@@ -84,7 +95,8 @@ const FinancialHub = () => {
       fetchData();
       setShowGoalModal(false);
       setGoalName(''); setGoalTarget('');
-    } catch (err) { alert("Goal creation failed."); }
+      showToast('Wealth accumulation target established!');
+    } catch (err) { showToast(err.response?.data?.message || "Goal creation failed.", 'error'); }
     finally { setLoading(false); }
   };
 
@@ -96,8 +108,8 @@ const FinancialHub = () => {
       fetchData();
       setShowLoanModal(false);
       setLoanAmount('');
-      alert("Credit Approved!");
-    } catch (err) { alert(err.response?.data?.message || "Loan declined."); }
+      showToast("Credit authorized and deposited to Savings!");
+    } catch (err) { showToast(err.response?.data?.message || "Loan declined.", 'error'); }
     finally { setLoading(false); }
   };
 
@@ -109,8 +121,8 @@ const FinancialHub = () => {
       fetchData();
       setShowInvestModal(false);
       setInvestAmount('');
-      alert(`Investment Successful! Your wealth is now growing ${investInterval.toLowerCase()}.`);
-    } catch (err) { alert(err.response?.data?.message || "Investment failed."); }
+      showToast(`Investment successful! Growing ${investInterval.toLowerCase()}.`);
+    } catch (err) { showToast(err.response?.data?.message || "Investment failed.", 'error'); }
     finally { setLoading(false); }
   };
 
@@ -122,8 +134,8 @@ const FinancialHub = () => {
       fetchData();
       setShowWithdrawModal(false);
       setWithdrawAmount('');
-      alert("Capital Liquefied back to Savings!");
-    } catch (err) { alert(err.response?.data?.message || "Withdrawal failed."); }
+      showToast("Capital liquefied back to Savings!");
+    } catch (err) { showToast(err.response?.data?.message || "Withdrawal failed.", 'error'); }
     finally { setLoading(false); }
   };
 
@@ -135,8 +147,21 @@ const FinancialHub = () => {
       fetchData();
       setShowPayLoanModal(false);
       setPayLoanAmount('');
-      alert("Debt Repayment Successful!");
-    } catch (err) { alert(err.response?.data?.message || "Payment failed."); }
+      showToast("Debt repayment executed successfully!");
+    } catch (err) { showToast(err.response?.data?.message || "Payment failed.", 'error'); }
+    finally { setLoading(false); }
+  };
+
+  const handleContributeToGoal = async () => {
+    if (!contributeAmount || !contributeGoalId) return;
+    setLoading(true);
+    try {
+      await axios.post('/api/v1/hub/savings/contribute', null, { params: { goalId: contributeGoalId, amount: contributeAmount } });
+      fetchData();
+      setShowContributeModal(false);
+      setContributeAmount('');
+      showToast("Funds contributed to your savings goal!");
+    } catch (err) { showToast(err.response?.data?.message || "Contribution failed.", 'error'); }
     finally { setLoading(false); }
   };
 
@@ -144,7 +169,7 @@ const FinancialHub = () => {
     try {
       const res = await axios.get('/api/v1/hub/calculator/compound', { params: calcInputs });
       setCalcResult(res.data.futureValue);
-    } catch (err) { alert("Calc Error"); }
+    } catch (err) { showToast("Calculator error.", 'error'); }
   };
 
   const pieData = hubData?.investments?.map((inv, idx) => ({
@@ -164,6 +189,17 @@ const FinancialHub = () => {
 
   return (
     <Layout title="ACME Financial Hub" subtitle="Institutional Wealth Management & Intelligence">
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-8 right-8 z-[300] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 max-w-md ${
+          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
+        }`}>
+          <ShieldCheck size={20} />
+          <span className="font-bold text-sm">{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 opacity-70 hover:opacity-100"><X size={16}/></button>
+        </div>
+      )}
       
       {/* Academy Overlay */}
       {showAcademy && (
@@ -258,7 +294,7 @@ const FinancialHub = () => {
         <div className="fixed inset-0 bg-red-500/10 backdrop-blur-md z-[200] flex items-center justify-center p-6">
            <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] text-center shadow-3xl">
               <h3 className="text-xl font-black mb-2 italic">Liquify Assets</h3>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8 text-red-500">Move Capital to Savings</p>
+              <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-8">Move Capital to Savings</p>
               <input type="number" value={withdrawAmount} onChange={e => setWithdrawAmount(e.target.value)} className="w-full p-6 bg-slate-50 border-2 rounded-2xl text-3xl font-black text-center mb-8" placeholder="0.00" />
               <div className="grid grid-cols-2 gap-4">
                  <button onClick={() => setShowWithdrawModal(false)} className="py-4 bg-slate-100 font-black rounded-xl uppercase text-xs">Cancel</button>
@@ -298,6 +334,22 @@ const FinancialHub = () => {
         </div>
       )}
 
+      {/* Contribute to Goal Modal */}
+      {showContributeModal && (
+        <div className="fixed inset-0 bg-emerald-500/10 backdrop-blur-md z-[200] flex items-center justify-center p-6">
+           <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] text-center shadow-3xl">
+              <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6"><Target size={32}/></div>
+              <h3 className="text-xl font-black mb-2 italic">Fund Your Goal</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Transfer from Savings to Goal</p>
+              <input type="number" value={contributeAmount} onChange={e => setContributeAmount(e.target.value)} className="w-full p-6 bg-slate-50 border-2 rounded-2xl text-3xl font-black text-center mb-8" placeholder="0.00" />
+              <div className="grid grid-cols-2 gap-4">
+                 <button onClick={() => setShowContributeModal(false)} className="py-4 bg-slate-100 font-black rounded-xl uppercase text-xs">Cancel</button>
+                 <button onClick={handleContributeToGoal} className="py-4 bg-emerald-500 text-white font-black rounded-xl uppercase text-xs">Contribute</button>
+              </div>
+           </div>
+        </div>
+      )}
+
       {/* Loan Modal */}
       {showLoanModal && (
         <div className="fixed inset-0 bg-primary/20 backdrop-blur-md z-[200] flex items-center justify-center p-6">
@@ -324,27 +376,12 @@ const FinancialHub = () => {
                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Portfolio Allocation</p>
                      <h3 className="text-4xl font-black text-primary italic">Strategic Asset Map</h3>
                   </div>
-                  {hubData?.investments?.length > 0 ? (
-                    <div className="flex gap-3">
+                  <div className="flex gap-3">
+                     {hubData?.investments?.length > 0 && (
                        <button onClick={() => setShowWithdrawModal(true)} className="px-6 py-3 bg-red-50 text-red-600 font-black rounded-2xl text-[10px] uppercase tracking-widest border border-red-100 hover:bg-red-100 transition-all">Liquify</button>
-                       <button onClick={() => setShowInvestModal(true)} className="px-8 py-3 bg-primary text-secondary font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">Relocation</button>
-                    </div>
-                  ) : (
-                    <button 
-                      onClick={async () => {
-                        setLoading(true);
-                        try {
-                          await axios.post('/api/v1/banking/accounts?type=INVESTMENT');
-                          fetchData();
-                          alert("ACME Institutional: Your High-Yield Vault Has been provisioned.");
-                        } catch (err) { alert(err.response?.data?.message || "Operational Error provision vault."); }
-                        finally { setLoading(false); }
-                      }}
-                      className="px-8 py-3 bg-secondary text-primary font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-secondary/20 hover:scale-105 transition-all"
-                    >
-                      Provision Vault
-                    </button>
-                  )}
+                     )}
+                     <button onClick={() => setShowInvestModal(true)} className="px-8 py-3 bg-primary text-secondary font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">Invest</button>
+                  </div>
                </div>
                
                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
@@ -361,7 +398,7 @@ const FinancialHub = () => {
                     ) : (
                       <div className="h-full w-full bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-10 text-center">
                          <ShieldCheck className="text-slate-200 mb-4" size={48} />
-                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-loose">No active high-yield assets detected.<br/>Initialize your vault to begin accumulation.</p>
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-loose">No active high-yield assets detected.<br/>Click "Invest" above to begin accumulation.</p>
                       </div>
                     )}
                   </div>
@@ -389,9 +426,17 @@ const FinancialHub = () => {
                   <div className="space-y-6">
                      {hubData?.savingsGoals?.map(goal => (
                         <div key={goal.id} className="bg-white p-8 rounded-[2.5rem] border-2 border-slate-50 shadow-sm relative overflow-hidden group">
-                           <div className="flex justify-between items-center mb-6">
+                           <div className="flex justify-between items-center mb-4">
                               <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center"><Target size={24}/></div>
-                              <span className="text-xs font-black text-emerald-500 italic">{(goal.currentAmount / goal.targetAmount * 100).toFixed(0)}%</span>
+                              <div className="flex items-center gap-3">
+                                 <span className="text-xs font-black text-emerald-500 italic">{(goal.currentAmount / goal.targetAmount * 100).toFixed(0)}%</span>
+                                 <button 
+                                   onClick={() => { setContributeGoalId(goal.id); setShowContributeModal(true); }}
+                                   className="px-3 py-1.5 bg-emerald-500 text-white rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all"
+                                 >
+                                   Fund
+                                 </button>
+                              </div>
                            </div>
                            <h4 className="font-black text-primary mb-1 uppercase text-sm">{goal.name}</h4>
                            <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
