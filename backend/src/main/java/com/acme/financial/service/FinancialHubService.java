@@ -23,6 +23,7 @@ public class FinancialHubService {
     private final TransactionRepository transactionRepository;
     private final NotificationService notificationService;
     private final EmailService emailService;
+    private final AutoAllocationRepository autoAllocationRepository;
 
     public FinancialHubService(SavingsGoalRepository savingsGoalRepository,
                                InvestmentRepository investmentRepository,
@@ -32,7 +33,8 @@ public class FinancialHubService {
                                UserRepository userRepository,
                                TransactionRepository transactionRepository,
                                NotificationService notificationService,
-                               EmailService emailService) {
+                               EmailService emailService,
+                               AutoAllocationRepository autoAllocationRepository) {
         this.savingsGoalRepository = savingsGoalRepository;
         this.investmentRepository = investmentRepository;
         this.loanRepository = loanRepository;
@@ -42,6 +44,7 @@ public class FinancialHubService {
         this.transactionRepository = transactionRepository;
         this.notificationService = notificationService;
         this.emailService = emailService;
+        this.autoAllocationRepository = autoAllocationRepository;
     }
 
     @Transactional(readOnly = true)
@@ -54,6 +57,7 @@ public class FinancialHubService {
         summary.put("investments", investmentRepository.findByUser_Id(managedUser.getId()));
         summary.put("loans", loanRepository.findByUser_Id(managedUser.getId()));
         summary.put("auditLogs", auditLogRepository.findByUsernameOrderByTimestampDesc(managedUser.getUsername()));
+        summary.put("allocations", autoAllocationRepository.findAllByUserOrderByCreatedAtDesc(managedUser));
         
         BigDecimal totalSavings = savingsGoalRepository.findByUser_Id(managedUser.getId()).stream()
             .map(SavingsGoal::getCurrentAmount)
