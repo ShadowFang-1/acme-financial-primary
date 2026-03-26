@@ -19,10 +19,10 @@ import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 
 const BILL_CATEGORIES = [
-  { id: 'UTILITIES', name: 'Utilities', icon: Zap, color: 'text-amber-500 bg-amber-50' },
-  { id: 'INTERNET', name: 'Internet & Data', icon: Wifi, color: 'text-blue-500 bg-blue-50' },
-  { id: 'ENTERTAINMENT', name: 'Subscriptions', icon: Tv, color: 'text-purple-500 bg-purple-50' },
-  { id: 'MOBILE', name: 'Mobile Top-up', icon: Smartphone, color: 'text-green-500 bg-green-50' }
+  { id: 'UTILITIES', name: 'Utilities', icon: Zap, color: 'text-amber-500 bg-amber-50', providers: ['ECG (Electricity)', 'GWCL (Water)', 'Pura Water', 'Solar-X'] },
+  { id: 'INTERNET', name: 'Internet & Data', icon: Wifi, color: 'text-blue-500 bg-blue-50', providers: ['MTN Fiber', 'Telecel Broadband', 'Busy Internet', 'Surfline', 'Starlink'] },
+  { id: 'ENTERTAINMENT', name: 'Subscriptions', icon: Tv, color: 'text-purple-500 bg-purple-50', providers: ['Netflix Premium', 'DSTV', 'GOtv', 'Spotify Family', 'Apple Music', 'Disney+', 'Canal+'] },
+  { id: 'MOBILE', name: 'Mobile Top-up', icon: Smartphone, color: 'text-green-500 bg-green-50', providers: ['MTN (Ghana) Airtime', 'Telecel Airtime', 'AT (AirtelTigo) Airtime'] }
 ];
 
 const BillPayment = () => {
@@ -151,13 +151,29 @@ const BillPayment = () => {
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Service Provider</label>
-                        <input type="text" className="input-field" placeholder="e.g. Netflix, Electricity Co." required value={formData.provider} onChange={(e) => setFormData({...formData, provider: e.target.value})} />
+                        <select 
+                           className="input-field bg-slate-50 font-bold" 
+                           required 
+                           value={formData.provider} 
+                           onChange={(e) => setFormData({...formData, provider: e.target.value})}
+                        >
+                           <option value="">Select Provider...</option>
+                           {selectedCategory?.providers?.map(p => <option key={p} value={p}>{p}</option>)}
+                           <option value="OTHER">Other Institution...</option>
+                        </select>
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Customer/Meter ID</label>
-                        <input type="text" className="input-field font-mono" placeholder="ID Number" required value={formData.customerID} onChange={(e) => setFormData({...formData, customerID: e.target.value})} />
+                        <input type="text" className="input-field font-mono" placeholder="Account/ID Number" required value={formData.customerID} onChange={(e) => setFormData({...formData, customerID: e.target.value})} />
                       </div>
                    </div>
+
+                   {formData.provider === 'OTHER' && (
+                      <div className="space-y-2 animate-in slide-in-from-top-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Manual Institution Name</label>
+                        <input type="text" className="input-field" placeholder="Enter provider name..." required onChange={(e) => setFormData({...formData, provider: e.target.value})} />
+                      </div>
+                   )}
 
                    <div className="space-y-2">
                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Amount to Pay</label>

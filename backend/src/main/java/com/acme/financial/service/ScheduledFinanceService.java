@@ -64,6 +64,9 @@ public class ScheduledFinanceService {
                 case "DAILY":
                     isDue = inv.getLastUpdated().plusDays(1).isBefore(now);
                     break;
+                case "WEEKLY":
+                    isDue = inv.getLastUpdated().plusWeeks(1).isBefore(now);
+                    break;
                 case "MONTHLY":
                     isDue = inv.getLastUpdated().plusMonths(1).isBefore(now);
                     break;
@@ -86,20 +89,9 @@ public class ScheduledFinanceService {
         BigDecimal rate = inv.getInterestRate();
         if (rate == null || rate.compareTo(BigDecimal.ZERO) <= 0) return;
 
-        // Calculate period rate based on interval
-        BigDecimal periodRate;
+        // Periodic rate is already stored in inv.getInterestRate() (0.5, 1, 5, or 12)
+        BigDecimal periodRate = rate.divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP);
         String interval = inv.getGrowthInterval() != null ? inv.getGrowthInterval() : "MONTHLY";
-        switch (interval) {
-            case "DAILY":
-                periodRate = rate.divide(new BigDecimal("36500"), 10, RoundingMode.HALF_UP); // daily rate from annual %
-                break;
-            case "ANNUALLY":
-                periodRate = rate.divide(new BigDecimal("100"), 10, RoundingMode.HALF_UP); // full annual rate
-                break;
-            default: // MONTHLY
-                periodRate = rate.divide(new BigDecimal("1200"), 10, RoundingMode.HALF_UP); // monthly rate from annual %
-                break;
-        }
 
         BigDecimal interest = inv.getAmount().multiply(periodRate).setScale(2, RoundingMode.HALF_UP);
         BigDecimal newAmount = inv.getAmount().add(interest);
@@ -135,6 +127,15 @@ public class ScheduledFinanceService {
         // Notify
         String msg = "Your investment earned GHS " + interest + " in interest. New balance: GHS " + newAmount;
         notificationService.notify(user, "Investment Interest Credited", msg);
+        
+        // Target Reached check
+        if (inv.getTargetAmount() != null && newAmount.compareTo(inv.getTargetAmount()) >= 0 
+            && inv.getAmount().subtract(interest).compareTo(inv.getTargetAmount()) < 0) {
+            String targetMsg = "Congratulations! Your investment '" + inv.getAssetName() + "' has reached its target of GHS " + inv.getTargetAmount();
+            notificationService.notify(user, "Investment Target Reached", targetMsg);
+            emailService.sendEmail(user.getEmail(), "ACME: Investment Target Reached", targetMsg);
+        }
+
         emailService.sendEmail(user.getEmail(), "ACME: Investment Interest Credited", msg);
     }
 

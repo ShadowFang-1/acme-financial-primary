@@ -34,9 +34,10 @@ public class FinancialHubController {
     public ResponseEntity<Void> invest(
             @AuthenticationPrincipal User user,
             @RequestParam BigDecimal amount,
-            @RequestParam(defaultValue = "MONTHLY") String interval
+            @RequestParam(defaultValue = "MONTHLY") String interval,
+            @RequestParam(required = false) BigDecimal targetAmount
     ) {
-        hubService.invest(user, amount, interval);
+        hubService.invest(user, amount, interval, targetAmount);
         return ResponseEntity.ok().build();
     }
 

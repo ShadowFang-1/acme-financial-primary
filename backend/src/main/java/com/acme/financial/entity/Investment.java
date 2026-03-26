@@ -20,10 +20,13 @@ public class Investment {
     private String assetName; 
     private String assetType;
     private BigDecimal amount;
+    private BigDecimal initialAmount;
+    private BigDecimal targetAmount;
     private String status; 
-    private String growthInterval; // "MONTHLY", "ANNUALLY"
-    private BigDecimal interestRate; // 5.0, 12.0 etc
+    private String growthInterval; // "DAILY", "WEEKLY", "MONTHLY", "ANNUALLY"
+    private BigDecimal interestRate; // 0.5, 1.0, 5.0, 12.0
     private LocalDateTime lastUpdated;
+    private LocalDateTime createdAt;
 
     public Investment() {}
 
@@ -37,6 +40,10 @@ public class Investment {
     public void setAssetType(String assetType) { this.assetType = assetType; }
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
+    public BigDecimal getInitialAmount() { return initialAmount; }
+    public void setInitialAmount(BigDecimal initialAmount) { this.initialAmount = initialAmount; }
+    public BigDecimal getTargetAmount() { return targetAmount; }
+    public void setTargetAmount(BigDecimal targetAmount) { this.targetAmount = targetAmount; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public String getGrowthInterval() { return growthInterval; }
@@ -45,4 +52,6 @@ public class Investment {
     public void setInterestRate(BigDecimal interestRate) { this.interestRate = interestRate; }
     public LocalDateTime getLastUpdated() { return lastUpdated; }
     public void setLastUpdated(LocalDateTime lastUpdated) { this.lastUpdated = lastUpdated; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

@@ -36,6 +36,15 @@ import {
 } from 'recharts';
 import Layout from '../components/Layout';
 
+const STOCKS = [
+  { symbol: 'MTNG', name: 'Scancom PLC (MTN Ghana)', price: 1.55, trend: '+2.4%' },
+  { symbol: 'GCB', name: 'GCB Bank Limited', price: 5.20, trend: '+0.8%' },
+  { symbol: 'SCB', name: 'Standard Chartered', price: 18.50, trend: '-1.2%' },
+  { symbol: 'EGL', name: 'Enterprise Group', price: 2.80, trend: '+0.5%' },
+  { symbol: 'BTC', name: 'Bitcoin (Global)', price: 72400.00, trend: '+4.1%' },
+  { symbol: 'AAPL', name: 'Apple Inc.', price: 185.20, trend: '+0.4%' }
+];
+
 const FinancialHub = () => {
   const [hubData, setHubData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,10 +64,10 @@ const FinancialHub = () => {
   const [calcYears, setCalcYears] = useState('5');
   const [calcResult, setCalcResult] = useState(null);
 
-  // System rates
+  // System rates (periodic)
   const RATES = {
-    INVESTMENT: { MONTHLY: 5.0, ANNUALLY: 12.0 },
-    LOAN: { MONTHLY: 8.0, ANNUALLY: 8.0 }
+    INVESTMENT: { DAILY: 0.5, WEEKLY: 1.0, MONTHLY: 5.0, ANNUALLY: 12.0 },
+    LOAN: { DAILY: 0.5, WEEKLY: 1.0, MONTHLY: 5.0, ANNUALLY: 12.0 }
   };
 
   const [showGoalModal, setShowGoalModal] = useState(false);
@@ -77,6 +86,9 @@ const FinancialHub = () => {
   const [showInvestModal, setShowInvestModal] = useState(false);
   const [investAmount, setInvestAmount] = useState('');
   const [investInterval, setInvestInterval] = useState('MONTHLY');
+  const [investTarget, setInvestTarget] = useState('');
+
+  const [showGrowthGraph, setShowGrowthGraph] = useState(null); // stores investment object
 
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -87,6 +99,8 @@ const FinancialHub = () => {
 
   const [showAcademy, setShowAcademy] = useState(false);
   const [showTradeSandbox, setShowTradeSandbox] = useState(false);
+  const [sandboxBalance, setSandboxBalance] = useState(250000);
+  const [sandboxPortfolio, setSandboxPortfolio] = useState([]);
 
   // Auto-Allocation
   const [showAllocModal, setShowAllocModal] = useState(false);
@@ -148,8 +162,14 @@ const FinancialHub = () => {
     if (!investAmount) return;
     setLoading(true);
     try {
-      await axios.post('/api/v1/hub/invest', null, { params: { amount: investAmount, interval: investInterval } });
-      fetchData(); setShowInvestModal(false); setInvestAmount('');
+      await axios.post('/api/v1/hub/invest', null, { 
+        params: { 
+          amount: investAmount, 
+          interval: investInterval,
+          targetAmount: investTarget || undefined
+        } 
+      });
+      fetchData(); setShowInvestModal(false); setInvestAmount(''); setInvestTarget('');
       showToast(`Investment successful! Growing ${investInterval.toLowerCase()}.`);
     } catch (err) { showToast(err.response?.data?.message || "Investment failed.", 'error'); }
     finally { setLoading(false); }
@@ -191,23 +211,32 @@ const FinancialHub = () => {
   // Growth Engine Calculator
   const handleCalculate = () => {
     const P = parseFloat(calcPrincipal);
-    const r = RATES[calcMode][calcInterval] / 100;
+    const periodicRate = RATES[calcMode][calcInterval] / 100;
     const t = parseFloat(calcYears);
     if (!P || !t) return;
 
     if (calcMode === 'INVESTMENT') {
-      const n = calcInterval === 'MONTHLY' ? 12 : 1;
-      const futureValue = P * Math.pow(1 + (r / n), n * t);
+      let periodsPerYear = 12;
+      if (calcInterval === 'DAILY') periodsPerYear = 365;
+      if (calcInterval === 'WEEKLY') periodsPerYear = 52;
+      if (calcInterval === 'ANNUALLY') periodsPerYear = 1;
+
+      const futureValue = P * Math.pow(1 + periodicRate, periodsPerYear * t);
       const interest = futureValue - P;
-      setCalcResult({ futureValue: futureValue.toFixed(2), interest: interest.toFixed(2), rate: r * 100, type: 'INVESTMENT' });
+      setCalcResult({ futureValue: futureValue.toFixed(2), interest: interest.toFixed(2), rate: periodicRate * 100, type: 'INVESTMENT' });
     } else {
-      // Loan: total repayment with interest
-      const monthlyRate = r / 12;
-      const totalMonths = t * 12;
-      const monthlyPayment = P * (monthlyRate * Math.pow(1 + monthlyRate, totalMonths)) / (Math.pow(1 + monthlyRate, totalMonths) - 1);
-      const totalRepayment = monthlyPayment * totalMonths;
+      // Loan: total repayment with interest (simplified periodic compound)
+      let periodsPerYear = 12;
+      if (calcInterval === 'DAILY') periodsPerYear = 365;
+      if (calcInterval === 'WEEKLY') periodsPerYear = 52;
+      if (calcInterval === 'ANNUALLY') periodsPerYear = 1;
+
+      const totalPeriods = periodsPerYear * t;
+      const periodicInterest = periodicRate;
+      const payment = P * (periodicInterest * Math.pow(1 + periodicInterest, totalPeriods)) / (Math.pow(1 + periodicInterest, totalPeriods) - 1);
+      const totalRepayment = payment * totalPeriods;
       const totalInterest = totalRepayment - P;
-      setCalcResult({ totalRepayment: totalRepayment.toFixed(2), monthlyPayment: monthlyPayment.toFixed(2), totalInterest: totalInterest.toFixed(2), rate: r * 100, type: 'LOAN' });
+      setCalcResult({ totalRepayment: totalRepayment.toFixed(2), monthlyPayment: payment.toFixed(2), totalInterest: totalInterest.toFixed(2), rate: periodicRate * 100, type: 'LOAN' });
     }
   };
 
@@ -247,6 +276,30 @@ const FinancialHub = () => {
     } catch (err) { showToast("Delete failed.", 'error'); }
   };
 
+  const handleSandboxBuy = (stock) => {
+    const exchangeRate = 15; // Simulated Local FX
+    const price = stock.price * (stock.symbol === 'BTC' || stock.symbol === 'AAPL' ? exchangeRate : 1);
+    
+    if (sandboxBalance < price) {
+       showToast("Sandbox Exception: Insufficient Capital.", "error");
+       return;
+    }
+    setSandboxBalance(prev => prev - price);
+    setSandboxPortfolio(prev => {
+       const existing = prev.find(p => p.symbol === stock.symbol);
+       if (existing) {
+          return prev.map(p => p.symbol === stock.symbol ? { ...p, qty: p.qty + 1, avgPrice: (p.avgPrice + price) / 2 } : p);
+       }
+       return [...prev, { symbol: stock.symbol, name: stock.name, qty: 1, avgPrice: price }];
+    });
+    showToast(`Order Confirmed: 1 Unit ${stock.symbol} at ${price.toFixed(2)}`, 'success');
+  };
+
+  const simulateMarketRefresh = () => {
+     showToast("Market Intelligence: Fetching Live Assets...", "success");
+     // Visual refresh effect
+  };
+
   const pieData = hubData?.investments?.map((inv, idx) => ({
     name: inv.assetName || "Fund " + (idx+1),
     value: parseFloat(inv.amount || 0)
@@ -280,27 +333,44 @@ const FinancialHub = () => {
       {showAcademy && (
         <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[200] flex items-center justify-center p-6 text-white animate-in zoom-in-95">
            <button onClick={() => setShowAcademy(false)} className="absolute top-10 right-10 hover:rotate-90 transition-all"><X size={32}/></button>
-           <div className="max-w-4xl text-left bg-slate-900/40 p-12 rounded-[3.5rem] border border-white/5 shadow-3xl">
+           <div className="max-w-4xl w-full text-left bg-slate-900/40 p-12 rounded-[3.5rem] border border-white/5 shadow-3xl overflow-y-auto max-h-[90vh]">
               <h2 className="text-4xl font-black italic mb-4 text-center">ACME Academy: Asset Mastery</h2>
               <p className="text-center text-slate-400 text-xs uppercase tracking-[0.5em] mb-12 italic font-bold">Institutional Intelligence Engine</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              
+              <div className="grid grid-cols-1 gap-8">
                  <div className="p-8 bg-white/5 rounded-3xl border border-white/10">
                     <Zap className="text-secondary mb-4" size={32} />
-                    <h4 className="font-black italic mb-4 uppercase tracking-widest text-sm">1. Mastering APY</h4>
-                    <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                       ACME provides tiered APY: <strong>5% Monthly</strong> compounding or <strong>12% Annual</strong> compounding on your investment portfolio. Use the Growth Engine to simulate returns before committing capital.
+                    <h4 className="font-black italic mb-4 uppercase tracking-widest text-lg">1. The Power of Compounding (Periodic Yield)</h4>
+                    <p className="text-sm text-slate-300 leading-relaxed font-medium mb-4">
+                       ACME's Investment Hub utilizes a unique periodic yield system designed for rapid capital acceleration. Unlike traditional annual-only compounding, we offer multi-frequency intervals:
                     </p>
+                    <ul className="space-y-3 text-xs text-slate-400 list-disc pl-5">
+                       <li><strong>Daily (0.5%):</strong> Ideal for high-liquidity capital rotation. Capital grows every 24 hours.</li>
+                       <li><strong>Weekly (1.0%):</strong> A balanced approach for medium-term treasury management.</li>
+                       <li><strong>Monthly (5.0%):</strong> Historical institutional standard for wealth accumulation.</li>
+                       <li><strong>Annually (12.0%):</strong> Strategic long-term holding with our highest single-interval rate.</li>
+                    </ul>
                  </div>
+
                  <div className="p-8 bg-white/5 rounded-3xl border border-white/10">
                     <ShieldCheck className="text-emerald-400 mb-4" size={32} />
-                    <h4 className="font-black italic mb-4 uppercase tracking-widest text-sm">2. Auto-Allocations</h4>
-                    <p className="text-xs text-slate-400 leading-relaxed font-medium">
-                       Set up automatic recurring transfers from Savings to Investments, Goals, or Loan Payments. Choose daily, weekly, monthly, or yearly frequency and let ACME manage your wealth automatically.
+                    <h4 className="font-black italic mb-4 uppercase tracking-widest text-lg">2. Strategic Debt Management</h4>
+                    <p className="text-sm text-slate-300 leading-relaxed font-medium">
+                       Loans at ACME Financial are structured as "Closed-End Obligations." When you request credit, a closing date is calculated. The system performs automatic deductions from your primary Savings vault based on your selected frequency. If capital is insufficient on the closing date, the system will attempt to clear the remaining balance from all connected liquidity sources to maintain your credit score.
+                    </p>
+                 </div>
+
+                 <div className="p-8 bg-white/5 rounded-3xl border border-white/10">
+                    <Briefcase className="text-blue-400 mb-4" size={32} />
+                    <h4 className="font-black italic mb-4 uppercase tracking-widest text-lg">3. Target-Based Wealth Tracking</h4>
+                    <p className="text-sm text-slate-300 leading-relaxed font-medium">
+                       Successful wealth management requires measurable targets. By setting an **Investment Target**, you activate our AI monitoring agents. Once your portfolio valuation hits the threshold, you will receive real-time internal notifications and institutional alerts, allowing you to reallocate capital or liquefy assets at peak efficiency.
                     </p>
                  </div>
               </div>
+
               <div className="mt-12 text-center">
-                 <button onClick={() => setShowAcademy(false)} className="px-12 py-4 bg-white text-primary font-black uppercase text-[10px] tracking-widest rounded-2xl hover:scale-105 transition-all">Understood, Return to Hub</button>
+                 <button onClick={() => setShowAcademy(false)} className="px-12 py-4 bg-white text-primary font-black uppercase text-[10px] tracking-widest rounded-2xl hover:scale-105 transition-all">Exit Academy</button>
               </div>
            </div>
         </div>
@@ -309,16 +379,102 @@ const FinancialHub = () => {
       {/* Trade Sandbox Overlay */}
       {showTradeSandbox && (
         <div className="fixed inset-0 bg-primary/40 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in">
-           <div className="bg-white w-full max-w-2xl rounded-[3rem] p-10 shadow-2xl relative">
-              <button onClick={() => setShowTradeSandbox(false)} className="absolute top-8 right-8"><X size={24}/></button>
-              <h3 className="text-2xl font-black italic mb-8 flex items-center gap-2"><TrendingUp className="text-secondary" /> Trading Sandbox</h3>
-              <div className="space-y-4">
-                 {STOCKS.map(s => (
-                    <div key={s.symbol} className="flex justify-between items-center p-6 bg-slate-50 rounded-2xl hover:scale-[1.02] transition-all">
-                       <div><p className="font-black">{s.symbol}</p><p className="text-[10px] text-slate-400 font-bold uppercase">{s.name}</p></div>
-                       <div className="text-right"><p className="font-black">${s.price}</p><p className="text-[10px] font-black text-green-500">{s.trend}</p></div>
+           <div className="bg-white w-full max-w-4xl rounded-[3rem] p-12 shadow-2xl relative overflow-hidden">
+              <button onClick={() => setShowTradeSandbox(false)} className="absolute top-8 right-8 text-slate-300 hover:text-primary transition-colors"><X size={24}/></button>
+              
+              <div className="flex items-center justify-between mb-10">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-secondary"><TrendingUp size={24}/></div>
+                    <div>
+                       <h3 className="text-2xl font-black italic">Trading Sandbox</h3>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Real-Time Simulation Environment</p>
                     </div>
-                 ))}
+                 </div>
+                 <button onClick={simulateMarketRefresh} className="p-3 bg-slate-100 rounded-xl hover:bg-primary hover:text-white transition-all"><RefreshCw size={18}/></button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 <div className="lg:col-span-2 space-y-6">
+                    <div>
+                       <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Market Assets</h5>
+                       <div className="space-y-3">
+                        {STOCKS.map(s => (
+                           <div key={s.symbol} className="flex justify-between items-center p-6 bg-slate-50 border border-slate-100 rounded-3xl hover:bg-white hover:shadow-xl hover:border-transparent transition-all group">
+                              <div className="flex items-center gap-4">
+                                 <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center font-black text-xs border border-slate-100">{s.symbol[0]}</div>
+                                 <div>
+                                    <p className="font-black text-sm">{s.symbol}</p>
+                                    <p className="text-[9px] text-slate-400 font-bold uppercase">{s.name}</p>
+                                 </div>
+                              </div>
+                              <div className="flex items-center gap-6">
+                                 <div className="text-right">
+                                    <p className="font-black text-sm">GHS {(s.price * 15).toLocaleString()}</p>
+                                    <p className={`text-[9px] font-black ${s.trend.startsWith('+') ? 'text-emerald-500' : 'text-red-500'}`}>{s.trend}</p>
+                                 </div>
+                                 <button onClick={() => handleSandboxBuy(s)} 
+                                    className="px-5 py-2.5 bg-primary text-secondary rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all">Buy</button>
+                              </div>
+                           </div>
+                        ))}
+                       </div>
+                    </div>
+
+                    {sandboxPortfolio.length > 0 && (
+                       <div className="animate-in fade-in slide-in-from-bottom-2">
+                          <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Your Sandbox Portfolio</h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                             {sandboxPortfolio.map(p => (
+                                <div key={p.symbol} className="p-5 bg-blue-50 border border-blue-100 rounded-3xl">
+                                   <div className="flex justify-between mb-2">
+                                      <span className="font-black text-xs">{p.symbol}</span>
+                                      <span className="text-[10px] font-bold text-blue-600 bg-white px-2 py-0.5 rounded-full">{p.qty} Units</span>
+                                   </div>
+                                   <div className="flex justify-between items-end">
+                                      <div>
+                                         <p className="text-[8px] font-black text-slate-400 uppercase">Avg Price</p>
+                                         <p className="text-sm font-black">GHS {p.avgPrice.toLocaleString()}</p>
+                                      </div>
+                                      <div className={`text-[10px] font-black italic text-emerald-500`}>PROFIT: +5.2%</div>
+                                   </div>
+                                </div>
+                             ))}
+                          </div>
+                       </div>
+                    )}
+                 </div>
+
+                 <div className="space-y-4">
+                  <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative h-fit">
+                      <div className="absolute top-0 right-0 p-6 opacity-10"><ShieldCheck size={100}/></div>
+                      <h4 className="text-xs font-black uppercase tracking-widest mb-6 italic text-secondary">Guidelines</h4>
+                      <div className="space-y-6">
+                         <div className="flex gap-4">
+                            <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center text-xs font-black">1</div>
+                            <p className="text-[10px] text-slate-400 leading-relaxed font-medium">Select high-liquidity assets (AAPL, BTC) for stable portfolio rotation.</p>
+                         </div>
+                         <div className="flex gap-4">
+                            <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center text-xs font-black">2</div>
+                            <p className="text-[10px] text-slate-400 leading-relaxed font-medium">Observe trends; buy during high-trend momentum for simulated gains.</p>
+                         </div>
+                         <div className="flex gap-4">
+                            <div className="w-6 h-6 bg-white/10 rounded-lg flex items-center justify-center text-xs font-black">3</div>
+                            <p className="text-[10px] text-slate-400 leading-relaxed font-medium">Use 'Trade' to execute simulated orders instantly with zero slippage.</p>
+                         </div>
+                      </div>
+                      <div className="mt-8 pt-8 border-t border-white/5">
+                         <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2">Sandbox Balance</p>
+                         <p className="text-2xl font-black italic">GHS {sandboxBalance.toLocaleString()}</p>
+                      </div>
+                  </div>
+                  
+                  <div className="p-8 bg-emerald-50 border-2 border-emerald-100 rounded-[2.5rem]">
+                     <h4 className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">Educational Goal</h4>
+                     <p className="text-xs font-bold text-emerald-800 leading-relaxed italic">
+                        "The goal of this sandbox is to teach capital allocation and market sentiment without real financial risk. Practice here before moving capital into ACME High-Yield Assets."
+                     </p>
+                  </div>
+                 </div>
               </div>
            </div>
         </div>
@@ -330,16 +486,32 @@ const FinancialHub = () => {
            <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] text-center shadow-3xl">
               <h3 className="text-xl font-black mb-2 italic">Acquire High-Yield Assets</h3>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Move Capital from Savings</p>
-              <div className="flex gap-2 mb-4">
-                 {['DAILY', 'MONTHLY', 'ANNUALLY'].map(interval => (
+              
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                 {['DAILY', 'WEEKLY', 'MONTHLY', 'ANNUALLY'].map(interval => (
                     <button key={interval} onClick={() => setInvestInterval(interval)} 
-                       className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest border-2 transition-all ${
+                       className={`py-3 rounded-xl font-black text-[9px] uppercase tracking-widest border-2 transition-all ${
                           investInterval === interval ? 'bg-primary text-secondary border-primary' : 'bg-slate-50 text-slate-400 border-slate-100'
                        }`}>{interval}</button>
                  ))}
               </div>
-              <p className="text-[10px] font-bold text-emerald-500 mb-6">APY: {investInterval === 'DAILY' ? '5%' : investInterval === 'MONTHLY' ? '5%' : '12%'} compounding {investInterval.toLowerCase()}</p>
-              <input type="number" value={investAmount} onChange={e => setInvestAmount(e.target.value)} className="w-full p-6 bg-slate-50 border-2 rounded-2xl text-3xl font-black text-center mb-8" placeholder="0.00" />
+              
+              <p className="text-[10px] font-bold text-emerald-500 mb-6 flex justify-between px-2 italic">
+                 <span>Periodic Yield:</span>
+                 <span>{RATES.INVESTMENT[investInterval]}%</span>
+              </p>
+
+              <div className="space-y-4 mb-8">
+                 <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2 text-left">Investment Amount (GHS)</label>
+                    <input type="number" value={investAmount} onChange={e => setInvestAmount(e.target.value)} className="w-full p-4 bg-slate-50 border-2 rounded-2xl text-2xl font-black text-center" placeholder="0.00" />
+                 </div>
+                 <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2 text-left">Target Amount (Optional)</label>
+                    <input type="number" value={investTarget} onChange={e => setInvestTarget(e.target.value)} className="w-full p-4 bg-slate-50 border-2 rounded-2xl text-sm font-black text-center" placeholder="Infinite Growth Target" />
+                 </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                  <button onClick={() => setShowInvestModal(false)} className="py-4 bg-slate-100 font-black rounded-xl uppercase text-xs">Cancel</button>
                  <button onClick={handleInvest} className="py-4 bg-primary text-white font-black rounded-xl uppercase text-xs">Invest Now</button>
@@ -573,16 +745,43 @@ const FinancialHub = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col justify-center space-y-6">
-                     {pieData.map((d, i) => (
-                        <div key={d.name} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                           <div className="flex items-center gap-3">
-                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
-                              <span className="text-xs font-black uppercase text-slate-800">{d.name}</span>
+                  <div className="flex flex-col justify-center space-y-4">
+                     {hubData?.investments?.map((inv, i) => {
+                        const growth = inv.amount - (inv.initialAmount || inv.amount);
+                        const progress = inv.targetAmount ? (inv.amount / inv.targetAmount * 100) : 0;
+                        return (
+                        <div key={inv.id} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 group">
+                           <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-3">
+                                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
+                                 <span className="text-[11px] font-black uppercase text-slate-800 tracking-tight">{inv.assetName}</span>
+                              </div>
+                              <button onClick={() => setShowGrowthGraph(inv)} className="p-2 bg-white text-primary rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-sm border border-slate-100"><TrendingUp size={14}/></button>
                            </div>
-                           <span className="font-bold text-primary italic text-sm">GHS {d.value.toLocaleString()}</span>
+                           <div className="flex justify-between items-end">
+                              <div>
+                                 <p className="font-black text-primary italic text-lg leading-none">GHS {inv.amount.toLocaleString()}</p>
+                                 <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mt-1">+{growth.toFixed(2)} Growth</p>
+                              </div>
+                              <div className="text-right">
+                                 <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{inv.growthInterval}</p>
+                                 <p className="text-[10px] font-black text-primary">{inv.interestRate}%</p>
+                              </div>
+                           </div>
+                           {inv.targetAmount && (
+                              <div className="mt-3 h-1 bg-slate-200 rounded-full overflow-hidden">
+                                 <div className="h-full bg-emerald-500" style={{ width: `${Math.min(progress, 100)}%` }}></div>
+                              </div>
+                           )}
                         </div>
-                     ))}
+                        );
+                     })}
+                     {(!hubData?.investments || hubData.investments.length === 0) && (
+                        <div className="flex flex-col justify-center items-center h-full text-slate-300">
+                           <PieChartIcon size={48} className="opacity-20 mb-4" />
+                           <p className="text-[10px] font-black uppercase tracking-widest">No Asset Detail</p>
+                        </div>
+                     )}
                   </div>
                </div>
             </section>
@@ -769,12 +968,12 @@ const FinancialHub = () => {
                </div>
 
                {/* Interval Selection */}
-               <div className="grid grid-cols-2 gap-2 mb-6">
-                  {['MONTHLY', 'ANNUALLY'].map(interval => (
+               <div className="grid grid-cols-4 gap-1.5 mb-6">
+                  {['DAILY', 'WEEKLY', 'MONTHLY', 'ANNUALLY'].map(interval => (
                      <button key={interval} onClick={() => { setCalcInterval(interval); setCalcResult(null); }}
-                        className={`py-2.5 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
+                        className={`py-2 rounded-xl font-black text-[8px] uppercase tracking-widest transition-all ${
                            calcInterval === interval ? 'bg-secondary text-primary' : 'bg-white/5 text-slate-500 border border-white/10'
-                        }`}>{interval}</button>
+                        }`}>{interval.slice(0, 3)}</button>
                   ))}
                </div>
 
@@ -870,6 +1069,82 @@ const FinancialHub = () => {
             </table>
          </div>
       </section>
+
+      {/* Growth Graph Modal */}
+      {showGrowthGraph && (
+         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl z-[250] flex items-center justify-center p-6 animate-in zoom-in-95">
+            <div className="bg-white w-full max-w-4xl rounded-[3rem] p-12 shadow-3xl relative">
+               <button onClick={() => setShowGrowthGraph(null)} className="absolute top-10 right-10 text-slate-300 hover:text-primary transition-all"><X size={28}/></button>
+               <div className="mb-10">
+                  <h3 className="text-2xl font-black italic mb-2 tracking-tight">{showGrowthGraph.assetName}</h3>
+                  <div className="flex gap-4">
+                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Yield: {showGrowthGraph.interestRate}% {showGrowthGraph.growthInterval}</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Current: GHS {showGrowthGraph.amount?.toLocaleString()}</span>
+                  </div>
+               </div>
+               
+               <div className="h-[400px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <BarChart data={(() => {
+                        const history = [];
+                        const start = showGrowthGraph.initialAmount || (showGrowthGraph.amount * 0.9);
+                        const end = showGrowthGraph.amount;
+                        const steps = 10;
+                        for (let i = 0; i <= steps; i++) {
+                           history.push({
+                              period: i === steps ? 'Today' : `T-${steps-i}`,
+                              value: (start + (end - start) * (i/steps)).toFixed(2)
+                           });
+                        }
+                        if (showGrowthGraph.targetAmount) {
+                            const target = showGrowthGraph.targetAmount;
+                            if (target > end) {
+                                for (let i = 1; i <= 5; i++) {
+                                    history.push({
+                                        period: `P+${i}`,
+                                        value: (end + (target - end) * (i/10)).toFixed(2),
+                                        isFuture: true
+                                    });
+                                }
+                            }
+                        }
+                        return history;
+                     })()}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="period" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 800, fill: '#94a3b8' }} hide />
+                        <RechartsTooltip 
+                           contentStyle={{ borderRadius: '1.5rem', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}
+                           itemStyle={{ fontWeight: 900, fontSize: '12px' }}
+                        />
+                        <Bar dataKey="value" radius={[10, 10, 0, 0]}>
+                           {(() => {
+                              const history = [];
+                              const start = showGrowthGraph.initialAmount || (showGrowthGraph.amount * 0.9);
+                              const end = showGrowthGraph.amount;
+                              const steps = 10;
+                              for (let i = 0; i <= steps; i++) history.push(i);
+                              if (showGrowthGraph.targetAmount && showGrowthGraph.targetAmount > end) {
+                                  for (let i = 1; i <= 5; i++) history.push(i + 100);
+                              }
+                              return history.map((e, idx) => (
+                                 <Cell key={`cell-${idx}`} fill={idx > 10 ? '#3b82f6' : '#10b981'} fillOpacity={idx > 10 ? 0.3 : 1} />
+                              ));
+                           })()}
+                        </Bar>
+                     </BarChart>
+                  </ResponsiveContainer>
+               </div>
+               <div className="mt-8 flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+                  <div className="flex gap-4">
+                     <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Historical Growth</span>
+                     <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-blue-500/30"></div> Target Projection</span>
+                  </div>
+                  {showGrowthGraph.targetAmount && <span>Target: GHS {showGrowthGraph.targetAmount.toLocaleString()}</span>}
+               </div>
+            </div>
+         </div>
+      )}
     </Layout>
   );
 };

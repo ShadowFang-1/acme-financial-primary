@@ -69,7 +69,7 @@ public class FinancialHubService {
     }
 
     @Transactional
-    public void invest(User user, BigDecimal amount, String interval) {
+    public void invest(User user, BigDecimal amount, String interval, BigDecimal targetAmount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Operational Fault: Investment amount must be positive.");
         }
@@ -97,16 +97,28 @@ public class FinancialHubService {
         accountRepository.save(savings);
         accountRepository.save(investmentAcc);
 
-        // Record for tracking
+        // Determine rate based on interval: DAILY=0.5%, WEEKLY=1%, MONTHLY=5%, ANNUALLY=12%
+        String growthInterval = interval != null ? interval : "MONTHLY";
+        BigDecimal rate;
+        switch (growthInterval) {
+            case "DAILY": rate = new BigDecimal("0.5"); break;
+            case "WEEKLY": rate = new BigDecimal("1.0"); break;
+            case "ANNUALLY": rate = new BigDecimal("12.0"); break;
+            default: rate = new BigDecimal("5.0"); break; // MONTHLY
+        }
+
         Investment inv = new Investment();
         inv.setUser(managedUser);
-        inv.setAssetName("ACME Strategic Yield Portfolio");
+        inv.setAssetName("ACME " + growthInterval + " Yield Fund");
         inv.setAssetType("HIGH_YIELD_INSTITUTIONAL");
         inv.setAmount(amount);
-        inv.setGrowthInterval(interval != null ? interval : "MONTHLY");
-        inv.setInterestRate(interval != null && interval.equals("ANNUALLY") ? new BigDecimal("12.0") : new BigDecimal("5.0"));
+        inv.setInitialAmount(amount);
+        inv.setTargetAmount(targetAmount);
+        inv.setGrowthInterval(growthInterval);
+        inv.setInterestRate(rate);
         inv.setStatus("GROWING");
         inv.setLastUpdated(LocalDateTime.now());
+        inv.setCreatedAt(LocalDateTime.now());
         investmentRepository.save(inv);
 
         // Record Transaction History
@@ -114,13 +126,14 @@ public class FinancialHubService {
             .senderAccount(savings)
             .receiverAccount(investmentAcc)
             .amount(amount)
-            .description("Capital Relocation to " + inv.getGrowthInterval() + " Yield Portfolio")
+            .description("Investment: " + growthInterval + " Yield Fund @ " + rate + "% APY")
             .type(TransactionType.TRANSFER)
             .build();
         transactionRepository.save(trans);
 
         // Notify
-        String logMsg = "Invested " + amount + " into ACME High-Yield (" + inv.getGrowthInterval() + ")";
+        String logMsg = "Invested GHS " + amount + " into " + growthInterval + " Fund @ " + rate + "% APY.";
+        if (targetAmount != null) logMsg += " Target: GHS " + targetAmount;
         notificationService.notify(managedUser, "Wealth Hub: Investment Successful", logMsg);
         emailService.sendEmail(managedUser.getEmail(), "ACME Financial Hub: Investment Alert", logMsg);
         recordAction("ASSET_INVEST", managedUser.getUsername(), logMsg, "INTERNAL_SYSTEM");
