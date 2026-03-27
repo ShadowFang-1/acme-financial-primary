@@ -64,6 +64,30 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
+  // Session Inactivity Timeout (5 Minutes)
+  useEffect(() => {
+    let timeout;
+    const INACTIVITY_LIMIT = 5 * 60 * 1000;
+
+    const resetTimer = () => {
+      if (timeout) clearTimeout(timeout);
+      if (user) {
+        timeout = setTimeout(() => {
+           console.warn("Session expired due to inactivity.");
+           logout();
+        }, INACTIVITY_LIMIT);
+      }
+    };
+
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(event => document.addEventListener(event, resetTimer));
+    resetTimer();
+
+    return () => {
+      if (timeout) clearTimeout(timeout);
+      events.forEach(event => document.removeEventListener(event, resetTimer));
+    };
+  }, [user]);
 
   const login = async (identifier, password) => {
     localStorage.removeItem('token');

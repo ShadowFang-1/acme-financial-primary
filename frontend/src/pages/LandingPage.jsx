@@ -89,9 +89,6 @@ const Hero = () => (
           <Link to="/register" className="btn-primary py-4 px-8 text-sm sm:text-lg uppercase tracking-widest font-black">
             Get Started Now <ArrowRight size={20} className="hidden sm:block" />
           </Link>
-          <button className="btn-outline py-4 px-8 text-sm sm:text-lg uppercase tracking-widest font-black">
-            View Features
-          </button>
         </div>
       </div>
       
@@ -118,32 +115,6 @@ const Hero = () => (
   </section>
 );
 
-const About = () => (
-  <section id="about" className="py-24 bg-white">
-    <div className="max-w-7xl mx-auto px-6">
-      <div className="text-center max-w-3xl mx-auto mb-20">
-        <h2 className="text-4xl md:text-5xl font-black mb-6 text-primary">Simple. Secure. Powerful.</h2>
-        <p className="text-lg text-slate-500 font-medium leading-relaxed">ACME FINANCIAL is built on the pillars of cutting-edge technology and human-centric service.</p>
-      </div>
-      
-      <div className="grid md:grid-cols-3 gap-8 sm:gap-12">
-        {[
-          { icon: Zap, title: "Instant Transfers", desc: "Send money across accounts in milliseconds with our lightning-fast core banking engine." },
-          { icon: Lock, title: "Military Grade Security", desc: "Your assets are protected by multiple layers of encryption and multi-factor authentication." },
-          { icon: Globe, title: "Global Access", desc: "Access your funds and manage your finances from anywhere in the world, any time." }
-        ].map((item, i) => (
-          <div key={i} className="card group hover:-translate-y-2 duration-300 !p-8">
-            <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center text-primary mb-8 group-hover:bg-primary group-hover:text-white transition-all transform group-hover:rotate-6">
-              <item.icon size={32} />
-            </div>
-            <h3 className="text-2xl font-bold mb-4 tracking-tight">{item.title}</h3>
-            <p className="text-slate-500 leading-relaxed font-medium">{item.desc}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-);
 
 const Team = () => (
   <section id="team" className="py-24 bg-slate-50">
@@ -258,7 +229,7 @@ const Footer = () => (
           </p>
           <div className="flex justify-center sm:justify-start gap-4">
             {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
-              <a key={i} href="#" className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white hover:border-primary transition-all">
+              <a key={i} href="https://linkedin.com/company/acme-financial-hub" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-primary hover:text-white hover:border-primary transition-all">
                 <Icon size={18} />
               </a>
             ))}
@@ -268,20 +239,20 @@ const Footer = () => (
         <div>
           <h4 className="font-black text-primary mb-6 lg:mb-8 uppercase tracking-[0.2em] text-[10px] sm:text-xs">Intelligence Products</h4>
           <ul className="space-y-4 text-slate-500 font-bold text-xs uppercase tracking-tight">
-            <li><a href="#" className="hover:text-primary transition-colors">Digital Banking</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Global Transfers</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Wealth Management</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Business Accounts</a></li>
+            <li><a href="#about" className="hover:text-primary transition-colors">Digital Banking</a></li>
+            <li><a href="#mission" className="hover:text-primary transition-colors">Global Transfers</a></li>
+            <li><a href="#about" className="hover:text-primary transition-colors">Wealth Management</a></li>
+            <li><a href="#mission" className="hover:text-primary transition-colors">Business Accounts</a></li>
           </ul>
         </div>
 
         <div>
           <h4 className="font-black text-primary mb-6 lg:mb-8 uppercase tracking-[0.2em] text-[10px] sm:text-xs">The Collective</h4>
           <ul className="space-y-4 text-slate-500 font-bold text-xs uppercase tracking-tight">
-            <li><a href="#" className="hover:text-primary transition-colors">About Us</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Legal & Privacy</a></li>
-            <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
+            <li><a href="#about" className="hover:text-primary transition-colors">About Us</a></li>
+            <li><a href="#team" className="hover:text-primary transition-colors">Careers</a></li>
+            <li><a href="#mission" className="hover:text-primary transition-colors">Legal & Privacy</a></li>
+            <li><Link to="/register" className="hover:text-primary transition-colors">Contact Us</Link></li>
           </ul>
         </div>
 
@@ -294,11 +265,11 @@ const Footer = () => (
             </li>
             <li className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
               <Phone size={18} className="text-secondary shrink-0" />
-              <span>+233 456 7890</span>
+              <span>+233 59 234 2323</span>
             </li>
             <li className="flex flex-col sm:flex-row items-center sm:items-start gap-3 sm:gap-4">
               <Mail size={18} className="text-secondary shrink-0" />
-              <span className="truncate max-w-full">hello@acmefinancial.com</span>
+              <span className="truncate max-w-full"><a href="mailto:hello@acmefinancial.com">hello@acmefinancial.com</a></span>
             </li>
           </ul>
         </div>
@@ -307,13 +278,73 @@ const Footer = () => (
       <div className="border-t border-slate-100 pt-12 flex flex-col md:flex-row justify-between items-center gap-8">
         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest text-center">© 2026 ACME Financial Systems. All rights reserved.</p>
         <div className="flex gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
-          <a href="#" className="hover:text-primary transition-colors">Policy</a>
-          <a href="#" className="hover:text-primary transition-colors">Terms</a>
-          <a href="#" className="hover:text-primary transition-colors">Cookies</a>
+          <a href="#mission" className="hover:text-primary transition-colors">Policy</a>
+          <a href="#mission" className="hover:text-primary transition-colors">Terms</a>
+          <a href="#mission" className="hover:text-primary transition-colors">Cookies</a>
         </div>
       </div>
     </div>
   </footer>
+);
+
+const About = () => (
+  <section id="about" className="py-24 border-b border-slate-100 overflow-hidden">
+    <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
+       <div className="relative animate-in fade-in slide-in-from-left-8 duration-1000">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-secondary/20 blur-[100px] rounded-full -translate-x-1/2 -translate-y-1/2"></div>
+          <p className="text-[10px] font-black text-secondary uppercase tracking-[0.4em] mb-4 italic">The ACME Standard</p>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-primary mb-8 tracking-tighter leading-tight italic">
+            Defining the <span className="text-gradient">Next Era</span> of Capital Management.
+          </h2>
+          <div className="space-y-6 text-slate-600 font-medium text-lg leading-relaxed">
+            <p>
+              ACME Financial Systems was born from a singular vision: to unify institutional-grade security with the agility of digital-native finance. We provide our partners with a hardened, scalable foundation for wealth orchestration.
+            </p>
+            <p>
+              Our platform is more than just a ledger; it is an intelligence layer that optimizes liquidity, automates allocation, and secures the future of sovereign capital for individuals and enterprises alike.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-8 mt-12 bg-white p-8 rounded-[2.5rem] border-2 border-slate-50 shadow-sm relative overflow-hidden group">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full translate-x-1/2 -translate-y-1/2 transition-transform group-hover:scale-150 duration-700"></div>
+             <div>
+                <p className="text-3xl font-black text-primary mb-1">99.9%</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Integrity</p>
+             </div>
+             <div>
+                <p className="text-3xl font-black text-primary mb-1">256-bit</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">End-to-End Vaulting</p>
+             </div>
+          </div>
+       </div>
+
+       <div className="grid grid-cols-2 gap-4 animate-in fade-in slide-in-from-right-8 duration-1000">
+          <div className="space-y-4">
+             <div className="h-48 bg-slate-900 rounded-3xl p-8 flex flex-col justify-end text-white relative overflow-hidden group">
+                <Globe className="absolute top-6 right-6 text-secondary/40 group-hover:scale-125 transition-transform" size={40} />
+                <p className="font-black text-xs uppercase tracking-widest">Global Reach</p>
+                <p className="text-[10px] text-slate-400">140+ Corridors</p>
+             </div>
+             <div className="h-64 bg-secondary rounded-3xl p-8 flex flex-col justify-end text-primary relative overflow-hidden group">
+                <Lock className="absolute top-6 right-6 text-primary/20 group-hover:rotate-12 transition-transform" size={40} />
+                <p className="font-black text-xs uppercase tracking-widest">Vault Security</p>
+                <p className="text-[10px] text-primary/60">Biometric Guard</p>
+             </div>
+          </div>
+          <div className="space-y-4 mt-8">
+             <div className="h-64 bg-primary text-white rounded-3xl p-8 flex flex-col justify-end relative overflow-hidden group">
+                <Zap className="absolute top-6 right-6 text-secondary group-hover:scale-150 transition-transform" size={40} />
+                <p className="font-black text-xs uppercase tracking-widest">Instant Pay</p>
+                <p className="text-[10px] text-slate-400">Zero-Latency</p>
+             </div>
+             <div className="h-48 bg-white border-2 border-slate-100 rounded-3xl p-8 flex flex-col justify-end relative overflow-hidden group">
+                <Users className="absolute top-6 right-6 text-primary/10 group-hover:translate-x-2 transition-transform" size={40} />
+                <p className="font-black text-xs text-primary uppercase tracking-widest">Institutional</p>
+                <p className="text-[10px] text-slate-400">Tier-1 Access</p>
+             </div>
+          </div>
+       </div>
+    </div>
+  </section>
 );
 
 const LandingPage = () => {

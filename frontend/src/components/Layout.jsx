@@ -196,7 +196,7 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 w-full lg:ml-80 min-h-screen flex flex-col">
+      <main className="flex-1 w-full lg:ml-80 min-h-screen flex flex-col pb-24 lg:pb-0">
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between p-4 bg-primary text-white sticky top-0 z-[50]">
           <Link to="/">
@@ -322,6 +322,21 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
           </div>
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-4 flex items-center justify-between z-[80] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+         {userMenuItems.slice(0, 5).map(item => {
+            const active = location.pathname === item.to;
+            return (
+               <Link key={item.to} to={item.to} className={`flex flex-col items-center gap-1.5 transition-all ${active ? 'text-primary scale-110' : 'text-slate-300'}`}>
+                  <div className={`p-2 rounded-xl transition-colors ${active ? 'bg-secondary' : 'bg-transparent'}`}>
+                     <item.icon size={20} />
+                  </div>
+                  <span className={`text-[8px] font-black uppercase tracking-widest ${active ? 'opacity-100' : 'opacity-0'}`}>{item.label.split(' ')[0]}</span>
+               </Link>
+            );
+         })}
+      </nav>
     </div>
   );
 };
