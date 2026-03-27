@@ -197,6 +197,17 @@ const FinancialHub = () => {
     finally { setLoading(false); }
   };
 
+  const handleCancelInvestment = async (investmentId, amount) => {
+    if (!window.confirm("Institutional Alert: Are you sure you want to fully cancel and liquify this asset?")) return;
+    setLoading(true);
+    try {
+      await axios.post('/api/v1/hub/invest/withdraw', null, { params: { investmentId, amount } });
+      fetchData();
+      showToast("Asset fully liquidated. Capital returned to Savings.");
+    } catch (err) { showToast(err.response?.data?.message || "Cancellation failed.", 'error'); }
+    finally { setLoading(false); }
+  };
+
   const handleContributeToGoal = async () => {
     if (!contributeAmount || !contributeGoalId) return;
     setLoading(true);
@@ -207,8 +218,6 @@ const FinancialHub = () => {
     } catch (err) { showToast(err.response?.data?.message || "Contribution failed.", 'error'); }
     finally { setLoading(false); }
   };
-
-  // Growth Engine Calculator
   const handleCalculate = () => {
     const P = parseFloat(calcPrincipal);
     const periodicRate = RATES[calcMode][calcInterval] / 100;
@@ -756,7 +765,12 @@ const FinancialHub = () => {
                                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
                                  <span className="text-[11px] font-black uppercase text-slate-800 tracking-tight">{inv.assetName}</span>
                               </div>
-                              <button onClick={() => setShowGrowthGraph(inv)} className="p-2 bg-white text-primary rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-sm border border-slate-100"><TrendingUp size={14}/></button>
+                              <div className="flex items-center gap-2">
+                                 <button onClick={() => setShowGrowthGraph(inv)} className="p-2 bg-white text-primary rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-sm border border-slate-100"><TrendingUp size={14}/></button>
+                                 <button onClick={() => handleCancelInvestment(inv.id, inv.amount)} className="p-2 bg-white text-red-500 rounded-xl opacity-0 group-hover:opacity-100 transition-all shadow-sm border border-slate-100 hover:bg-red-50" title="Cancel & Liquidate">
+                                    <Trash2 size={14}/>
+                                 </button>
+                              </div>
                            </div>
                            <div className="flex justify-between items-end">
                               <div>
@@ -954,7 +968,7 @@ const FinancialHub = () => {
 
             {/* Redesigned Growth Engine */}
             <section className="bg-slate-900 p-10 rounded-[3rem] text-white overflow-hidden relative shadow-2xl">
-               <div className="absolute top-0 right-0 p-8 opacity-10"><Calculator size={120}/></div>
+               <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none"><Calculator size={120}/></div>
                <h3 className="text-lg font-black italic mb-6 flex items-center gap-3"><Zap className="text-secondary"/> Growth Engine</h3>
                
                {/* Mode Selection */}

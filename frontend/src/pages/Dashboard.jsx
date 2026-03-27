@@ -223,6 +223,45 @@ const Dashboard = () => {
     tx.amount?.toString().includes(searchTerm)
   );
 
+  const getChartData = () => {
+    const categories = {
+      Deposits: 0,
+      Withdrawals: 0,
+      Transfers: 0,
+      Investments: 0
+    };
+
+    (recentTransactions || []).forEach(tx => {
+       const desc = tx.description?.toLowerCase() || '';
+       const isInvestment = desc.includes('invest') || tx.type === 'INVESTMENT';
+       
+       if (isInvestment) {
+          categories.Investments += tx.amount;
+       } else if (tx.type === 'DEPOSIT') {
+          categories.Deposits += tx.amount;
+       } else if (tx.type === 'WITHDRAWAL') {
+          categories.Withdrawals += tx.amount;
+       } else if (tx.type === 'TRANSFER') {
+          categories.Transfers += tx.amount;
+       }
+    });
+
+    const data = Object.keys(categories).map(key => ({
+      name: key,
+      value: categories[key]
+    })).filter(item => item.value > 0);
+
+    return data.length > 0 ? data : [
+      { name: 'Deposits', value: 1 },
+      { name: 'Withdrawals', value: 0 },
+      { name: 'Transfers', value: 0 },
+      { name: 'Investments', value: 0 }
+    ];
+  };
+
+  const chartData = getChartData();
+  const CHART_COLORS = ['#fbbf24', '#ef4444', '#3b82f6', '#10b981'];
+
 
   // Verification & Auth Guard
   if (!user) return null;
@@ -784,11 +823,7 @@ const Dashboard = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={[
-                      { name: 'Fixed', value: 400 },
-                      { name: 'Variable', value: 300 },
-                      { name: 'Savings', value: 300 },
-                    ]}
+                    data={chartData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -796,9 +831,9 @@ const Dashboard = () => {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    <Cell fill="#001a33" />
-                    <Cell fill="#10b981" />
-                    <Cell fill="#0284c7" />
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
                   </Pie>
                   <Tooltip />
                   <Legend />
