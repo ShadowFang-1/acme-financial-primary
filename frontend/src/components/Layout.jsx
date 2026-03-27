@@ -197,24 +197,47 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
 
       {/* Main Content */}
       <main className="flex-1 w-full lg:ml-80 min-h-screen flex flex-col pb-24 lg:pb-0">
-        {/* Mobile Header */}
+        {/* Mobile Header - Minimalist Profile Access */}
         <div className="lg:hidden flex items-center justify-between p-4 bg-primary text-white sticky top-0 z-[50]">
-          <Link to="/">
+          <Link to="/" className="opacity-80 hover:opacity-100 transition-opacity">
              <Logo iconSize={18} textColor="text-white" hideTextOnMobile />
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
              {!hideBell && unreadCount > 0 && user?.pushNotifications && (
                <Link to="/notifications" className="relative p-2 bg-white/10 rounded-xl">
                   <Bell size={18} />
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-primary"></span>
                </Link>
              )}
-             <button 
-               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-               className="p-2 bg-secondary text-primary rounded-xl"
-             >
-                <MoreVertical size={20} />
-             </button>
+             
+             {/* Profile Quick Access */}
+             <div className="relative" ref={notificationRef}>
+                <button 
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="w-10 h-10 rounded-full bg-gradient-to-tr from-secondary to-amber-300 flex items-center justify-center text-primary font-black text-xs shadow-lg border-2 border-white/20 active:scale-95 transition-all overflow-hidden"
+                >
+                  {user?.imageUrl ? (
+                    <img src={user.imageUrl} alt="P" className="w-full h-full object-cover" />
+                  ) : (
+                    user?.username?.[0]?.toUpperCase() 
+                  )}
+                </button>
+                
+                {isMobileMenuOpen && (
+                  <div className="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[100] animate-in slide-in-from-top-2">
+                    <div className="px-4 py-3 border-b border-slate-50 mb-1">
+                      <p className="font-black text-[10px] text-slate-400 uppercase tracking-widest leading-none mb-1">Signed in as</p>
+                      <p className="font-bold text-slate-900 text-xs truncate">{user?.username}</p>
+                    </div>
+                    <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[11px] font-black text-slate-600 hover:bg-slate-50 uppercase tracking-widest transition-colors">
+                      <User size={14} /> My Profile
+                    </Link>
+                    <button onClick={logout} className="flex items-center gap-3 px-4 py-2.5 text-[11px] font-black text-red-500 hover:bg-red-50 uppercase tracking-widest w-full text-left transition-colors">
+                      <LogOut size={14} /> Sign Out
+                    </button>
+                  </div>
+                )}
+             </div>
           </div>
         </div>
 
@@ -323,19 +346,39 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-6 py-4 flex items-center justify-between z-[80] shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
-         {userMenuItems.slice(0, 5).map(item => {
-            const active = location.pathname === item.to;
-            return (
-               <Link key={item.to} to={item.to} className={`flex flex-col items-center gap-1.5 transition-all ${active ? 'text-primary scale-110' : 'text-slate-300'}`}>
-                  <div className={`p-2 rounded-xl transition-colors ${active ? 'bg-secondary' : 'bg-transparent'}`}>
-                     <item.icon size={20} />
-                  </div>
-                  <span className={`text-[8px] font-black uppercase tracking-widest ${active ? 'opacity-100' : 'opacity-0'}`}>{item.label.split(' ')[0]}</span>
-               </Link>
-            );
-         })}
+      {/* Mobile Bottom Navigation - Centered Dashboard */}
+      <nav className="lg:hidden fixed bottom-1 left-0 right-0 px-4 py-2 z-[80] animate-in slide-in-from-bottom-4">
+         <div className="bg-white/95 backdrop-blur-md border border-slate-200/50 rounded-[2rem] px-6 py-3 flex items-center justify-between shadow-[0_10px_40px_rgba(0,0,0,0.1)]">
+            {(() => {
+               // Reorder: Hub, Transfer, Dashboard, History, Notifications
+               const orderedItems = [
+                  userMenuItems[1], // Hub
+                  userMenuItems[2], // Transfer
+                  userMenuItems[0], // Dashboard (Middle)
+                  userMenuItems[3], // History
+                  userMenuItems[4]  // Notifications
+               ];
+               
+               return orderedItems.map((item, index) => {
+                  const active = location.pathname === item.to;
+                  const isMain = index === 2; // Dashboard
+                  
+                  return (
+                     <Link key={item.to} to={item.to} className={`flex flex-col items-center transition-all ${active ? 'text-primary' : 'text-slate-400 hover:text-slate-600'}`}>
+                        <div className={`p-2 rounded-2xl transition-all duration-300 ${
+                           isMain 
+                              ? (active ? 'bg-primary text-secondary -translate-y-4 scale-125 shadow-xl shadow-primary/20 border-4 border-slate-50' : 'bg-primary/10 text-primary -translate-y-2') 
+                              : (active ? 'bg-secondary text-primary shadow-lg shadow-secondary/10' : 'bg-transparent')
+                        }`}>
+                           <item.icon size={isMain ? 24 : 20} />
+                        </div>
+                        {!isMain && <span className={`text-[8px] font-black uppercase tracking-[0.1em] mt-1 transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`}>{item.label.split(' ')[0]}</span>}
+                        {isMain && active && <span className="text-[7px] font-black uppercase tracking-[0.2em] transform -translate-y-2 text-primary">Live</span>}
+                     </Link>
+                  );
+               });
+            })()}
+         </div>
       </nav>
     </div>
   );
