@@ -43,6 +43,7 @@ const Profile = () => {
   const [fullImageOpen, setFullImageOpen] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [userAvatars, setUserAvatars] = useState([]);
+  const [showConfirm, setShowConfirm] = useState(null); // { title: '', message: '', onConfirm: fn }
 
   // Form states
   const [editForm, setEditForm] = useState({ 
@@ -206,16 +207,22 @@ const Profile = () => {
   };
 
   const handleDeactivate = async () => {
-    if (!window.confirm('CRITICAL ACTION: Are you sure you want to deactivate your account? You will be logged out and cannot re-access your funds until re-enabled by admin.')) return;
-    setUpdating(true);
-    try {
-      await axios.post('/api/v1/users/deactivate');
-      logout();
-    } catch (err) {
-      setError('System rejection during deactivation protocol.');
-    } finally {
-      setUpdating(false);
-    }
+    setShowConfirm({
+      title: "Deactivation Protocol",
+      message: "CRITICAL ACTION: Are you sure you want to deactivate your account? You will be logged out and cannot re-access your funds until re-enabled by admin. This action will freeze all active nodes.",
+      onConfirm: async () => {
+        setUpdating(true);
+        try {
+          await axios.post('/api/v1/users/deactivate');
+          logout();
+        } catch (err) {
+          setError('System rejection during deactivation protocol.');
+        } finally {
+          setUpdating(false);
+          setShowConfirm(null);
+        }
+      }
+    });
   };
 
   const handleTogglePreference = async (key) => {
@@ -709,9 +716,24 @@ const Profile = () => {
           </div>
         </div>
       )}
+
+      {showConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[500] flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white max-w-md w-full rounded-[3rem] p-10 shadow-3xl text-center">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+               <AlertCircle size={32}/>
+            </div>
+            <h3 className="text-xl font-black italic text-primary mb-4">{showConfirm.title}</h3>
+            <p className="text-sm text-slate-500 font-bold leading-relaxed mb-8">{showConfirm.message}</p>
+            <div className="flex gap-4">
+               <button onClick={() => setShowConfirm(null)} className="flex-1 py-4 bg-slate-100 text-slate-500 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all">Abort Action</button>
+               <button onClick={showConfirm.onConfirm} className="flex-1 py-4 bg-red-500 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all shadow-xl shadow-red-200">Yes, Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };
-
 
 export default Profile;

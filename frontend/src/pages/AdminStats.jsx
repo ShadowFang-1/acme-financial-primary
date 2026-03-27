@@ -129,6 +129,10 @@ const AdminStats = () => {
                       <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
                       <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                     </linearGradient>
+                    <linearGradient id="colorInvestment" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                   <XAxis 
@@ -149,6 +153,7 @@ const AdminStats = () => {
                   <Area type="monotone" dataKey="DEPOSIT" stackId="1" stroke="#22C55E" strokeWidth={3} fillOpacity={1} fill="url(#colorDeposit)" />
                   <Area type="monotone" dataKey="WITHDRAWAL" stackId="1" stroke="#EF4444" strokeWidth={3} fillOpacity={1} fill="url(#colorWithdrawal)" />
                   <Area type="monotone" dataKey="TRANSFER" stackId="1" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorTransfer)" />
+                  <Area type="monotone" dataKey="INVESTMENT" stackId="1" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorInvestment)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -161,17 +166,17 @@ const AdminStats = () => {
                   <PieChart>
                     <Pie
                       data={[
-                        { name: 'Savings', value: 4500 },
-                        { name: 'Checking', value: 3000 },
-                        { name: 'Fixed', value: 2000 },
-                        { name: 'Vault', value: 1500 }
+                        { name: 'Savings', value: data.reduce((acc, curr) => acc + (curr.DEPOSIT || 0), 0) },
+                        { name: 'Withdrawals', value: data.reduce((acc, curr) => acc + (curr.WITHDRAWAL || 0), 0) },
+                        { name: 'Transfers', value: data.reduce((acc, curr) => acc + (curr.TRANSFER || 0), 0) },
+                        { name: 'Investments', value: data.reduce((acc, curr) => acc + (curr.INVESTMENT || 0), 0) }
                       ]}
                       innerRadius={80}
                       outerRadius={120}
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {data.map((entry, index) => (
+                      {[0,1,2,3].map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
@@ -180,15 +185,23 @@ const AdminStats = () => {
                 </ResponsiveContainer>
              </div>
              <div className="space-y-4 mt-8">
-                {['Savings', 'Checking', 'Fixed', 'Vault'].map((label, i) => (
+                {['Savings', 'Withdrawals', 'Transfers', 'Investments'].map((label, i) => {
+                   const total = data.reduce((acc, curr) => acc + (curr.DEPOSIT || 0) + (curr.WITHDRAWAL || 0) + (curr.TRANSFER || 0) + (curr.INVESTMENT || 0), 0);
+                   const val = label === 'Savings' ? data.reduce((acc, curr) => acc + (curr.DEPOSIT || 0), 0) :
+                               label === 'Withdrawals' ? data.reduce((acc, curr) => acc + (curr.WITHDRAWAL || 0), 0) :
+                               label === 'Transfers' ? data.reduce((acc, curr) => acc + (curr.TRANSFER || 0), 0) :
+                               data.reduce((acc, curr) => acc + (curr.INVESTMENT || 0), 0);
+                   const pct = total > 0 ? (val / total * 100).toFixed(1) : 0;
+                   return (
                    <div key={label} className="flex justify-between items-center text-xs">
                       <div className="flex items-center gap-2">
-                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i] }}></div>
+                         <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
                          <span className="font-bold text-slate-500 uppercase tracking-widest">{label}</span>
                       </div>
-                      <span className="font-black text-primary">{(100 - i*15)}%</span>
+                      <span className="font-black text-primary">{pct}%</span>
                    </div>
-                ))}
+                   );
+                })}
              </div>
           </div>
         </div>

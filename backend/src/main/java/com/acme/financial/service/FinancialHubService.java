@@ -154,6 +154,21 @@ public class FinancialHubService {
             throw new RuntimeException("Liquidity Insufficient: Investment balance too low.");
         }
 
+        if (investmentId != null) {
+            Investment inv = investmentRepository.findById(investmentId)
+                .orElseThrow(() -> new RuntimeException("Operational Fault: Asset not found in registry."));
+            
+            if (inv.getAmount().compareTo(amount) < 0) {
+                throw new RuntimeException("Liquidity Error: Specific asset balance is lower than withdrawal request.");
+            }
+            
+            inv.setAmount(inv.getAmount().subtract(amount));
+            if (inv.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                inv.setStatus("LIQUIDATED");
+            }
+            investmentRepository.save(inv);
+        }
+
         Account savings = accounts.stream()
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()

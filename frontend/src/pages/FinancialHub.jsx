@@ -101,6 +101,7 @@ const FinancialHub = () => {
   const [showTradeSandbox, setShowTradeSandbox] = useState(false);
   const [sandboxBalance, setSandboxBalance] = useState(250000);
   const [sandboxPortfolio, setSandboxPortfolio] = useState([]);
+  const [showConfirm, setShowConfirm] = useState(null); // { title: '', message: '', onConfirm: fn }
 
   // Auto-Allocation
   const [showAllocModal, setShowAllocModal] = useState(false);
@@ -198,14 +199,19 @@ const FinancialHub = () => {
   };
 
   const handleCancelInvestment = async (investmentId, amount) => {
-    if (!window.confirm("Institutional Alert: Are you sure you want to fully cancel and liquify this asset?")) return;
-    setLoading(true);
-    try {
-      await axios.post('/api/v1/hub/invest/withdraw', null, { params: { investmentId, amount } });
-      fetchData();
-      showToast("Asset fully liquidated. Capital returned to Savings.");
-    } catch (err) { showToast(err.response?.data?.message || "Cancellation failed.", 'error'); }
-    finally { setLoading(false); }
+    setShowConfirm({
+      title: "Institutional Alert",
+      message: "Are you sure you want to fully cancel and liquify this asset? This action will immediately return all balanced capital to your primary Savings vault.",
+      onConfirm: async () => {
+        setLoading(true);
+        try {
+          await axios.post('/api/v1/hub/invest/withdraw', null, { params: { investmentId, amount } });
+          fetchData();
+          showToast("Asset fully liquidated. Capital returned to Savings.");
+        } catch (err) { showToast(err.response?.data?.message || "Cancellation failed.", 'error'); }
+        finally { setLoading(false); setShowConfirm(null); }
+      }
+    });
   };
 
   const handleContributeToGoal = async () => {
@@ -221,31 +227,21 @@ const FinancialHub = () => {
   const handleCalculate = () => {
     const P = parseFloat(calcPrincipal);
     const periodicRate = RATES[calcMode][calcInterval] / 100;
-    const t = parseFloat(calcYears);
+    const t = parseFloat(calcYears); // Now represents number of selected periods
     if (!P || !t) return;
 
     if (calcMode === 'INVESTMENT') {
-      let periodsPerYear = 12;
-      if (calcInterval === 'DAILY') periodsPerYear = 365;
-      if (calcInterval === 'WEEKLY') periodsPerYear = 52;
-      if (calcInterval === 'ANNUALLY') periodsPerYear = 1;
-
-      const futureValue = P * Math.pow(1 + periodicRate, periodsPerYear * t);
+      const futureValue = P * Math.pow(1 + periodicRate, t);
       const interest = futureValue - P;
       setCalcResult({ futureValue: futureValue.toFixed(2), interest: interest.toFixed(2), rate: periodicRate * 100, type: 'INVESTMENT' });
     } else {
-      // Loan: total repayment with interest (simplified periodic compound)
-      let periodsPerYear = 12;
-      if (calcInterval === 'DAILY') periodsPerYear = 365;
-      if (calcInterval === 'WEEKLY') periodsPerYear = 52;
-      if (calcInterval === 'ANNUALLY') periodsPerYear = 1;
-
-      const totalPeriods = periodsPerYear * t;
+      // Loan: total repayment with interest
+      const totalPeriods = t;
       const periodicInterest = periodicRate;
       const payment = P * (periodicInterest * Math.pow(1 + periodicInterest, totalPeriods)) / (Math.pow(1 + periodicInterest, totalPeriods) - 1);
       const totalRepayment = payment * totalPeriods;
       const totalInterest = totalRepayment - P;
-      setCalcResult({ totalRepayment: totalRepayment.toFixed(2), monthlyPayment: payment.toFixed(2), totalInterest: totalInterest.toFixed(2), rate: periodicRate * 100, type: 'LOAN' });
+      setCalcResult({ totalRepayment: totalRepayment.toFixed(2), periodicPayment: payment.toFixed(2), totalInterest: totalInterest.toFixed(2), rate: periodicRate * 100, type: 'LOAN' });
     }
   };
 
@@ -278,11 +274,18 @@ const FinancialHub = () => {
   };
 
   const handleDeleteAllocation = async (id) => {
-    try {
-      await axios.delete(`/api/v1/hub/allocations/${id}`);
-      fetchData();
-      showToast("Allocation removed.");
-    } catch (err) { showToast("Delete failed.", 'error'); }
+    setShowConfirm({
+      title: "Decommission Rule",
+      message: "Are you sure you want to permanently remove this auto-allocation rule?",
+      onConfirm: async () => {
+        try {
+          await axios.delete(`/api/v1/hub/allocations/${id}`);
+          fetchData();
+          showToast("Allocation removed.");
+        } catch (err) { showToast("Delete failed.", 'error'); }
+        finally { setShowConfirm(null); }
+      }
+    });
   };
 
   const handleSandboxBuy = (stock) => {
@@ -309,10 +312,14 @@ const FinancialHub = () => {
      // Visual refresh effect
   };
 
-  const pieData = hubData?.investments?.map((inv, idx) => ({
-    name: inv.assetName || "Fund " + (idx+1),
-    value: parseFloat(inv.amount || 0)
-  })) || [{ name: 'Cash Reserve', value: 1000 }];
+  const pieData = (hubData?.investments || [])
+    .filter(inv => inv.amount > 0 && inv.status !== 'LIQUIDATED')
+    .map((inv, idx) => ({
+      name: inv.assetName || "Fund " + (idx+1),
+      value: parseFloat(inv.amount || 0)
+    }));
+
+  if (pieData.length === 0) pieData.push({ name: 'Cash Reserve', value: 1000 });
 
   const COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'];
 
@@ -325,7 +332,8 @@ const FinancialHub = () => {
   if (loading) return <Layout title="Loading Hub..."><div className="p-20 text-center animate-pulse italic font-black text-slate-300">Synchronizing Institutional Records...</div></Layout>;
 
   return (
-    <Layout title="ACME Financial Hub" subtitle="Institutional Wealth Management & Intelligence">
+    <>
+      <Layout title="ACME Financial Hub" subtitle="Institutional Wealth Management & Intelligence">
 
       {/* Toast Notification */}
       {toast && (
@@ -753,13 +761,14 @@ const FinancialHub = () => {
                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-loose">No active investments.<br/>Click "Invest" to begin.</p>
                       </div>
                     )}
-                  </div>
-                  <div className="flex flex-col justify-center space-y-4">
-                     {hubData?.investments?.map((inv, i) => {
-                        const growth = inv.amount - (inv.initialAmount || inv.amount);
-                        const progress = inv.targetAmount ? (inv.amount / inv.targetAmount * 100) : 0;
-                        return (
-                        <div key={inv.id} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 group">
+                  </div>                   <div className="flex flex-col justify-center space-y-4">
+                      {(hubData?.investments || [])
+                        .filter(inv => inv.amount > 0 && inv.status !== 'LIQUIDATED')
+                        .map((inv, i) => {
+                         const growth = inv.amount - (inv.initialAmount || inv.amount);
+                         const progress = inv.targetAmount ? (inv.amount / inv.targetAmount * 100) : 0;
+                         return (
+                         <div key={inv.id} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 group">
                            <div className="flex items-center justify-between mb-3">
                               <div className="flex items-center gap-3">
                                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }}></div>
@@ -1003,7 +1012,9 @@ const FinancialHub = () => {
                      <input type="number" value={calcPrincipal} onChange={e => setCalcPrincipal(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-bold text-sm text-white" />
                   </div>
                   <div>
-                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Duration (Years)</label>
+                     <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">
+                        Duration ({calcInterval === 'DAILY' ? 'Days' : calcInterval === 'WEEKLY' ? 'Weeks' : calcInterval === 'MONTHLY' ? 'Months' : 'Years'})
+                     </label>
                      <input type="number" value={calcYears} onChange={e => setCalcYears(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl p-3 font-bold text-sm text-white" />
                   </div>
                   <button onClick={handleCalculate} className={`w-full py-4 font-black rounded-xl text-xs uppercase transition-all hover:scale-[1.02] ${
@@ -1026,8 +1037,8 @@ const FinancialHub = () => {
                        ) : (
                           <>
                              <div className="flex justify-between items-center">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Monthly Payment</span>
-                                <span className="text-xl font-black text-amber-400">GHS {parseFloat(calcResult.monthlyPayment).toLocaleString()}</span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{calcInterval.charAt(0) + calcInterval.slice(1).toLowerCase()} Repayment</span>
+                                <span className="text-xl font-black text-amber-400">GHS {parseFloat(calcResult.periodicPayment).toLocaleString()}</span>
                              </div>
                              <div className="flex justify-between items-center">
                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Repayment</span>
@@ -1160,6 +1171,23 @@ const FinancialHub = () => {
          </div>
       )}
     </Layout>
+
+    {showConfirm && (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[500] flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
+        <div className="bg-white max-w-md w-full rounded-[3rem] p-10 shadow-3xl text-center">
+          <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+             <Trash2 size={32}/>
+          </div>
+          <h3 className="text-xl font-black italic text-primary mb-4">{showConfirm.title}</h3>
+          <p className="text-sm text-slate-500 font-bold leading-relaxed mb-8">{showConfirm.message}</p>
+          <div className="flex gap-4">
+             <button onClick={() => setShowConfirm(null)} className="flex-1 py-4 bg-slate-100 text-slate-500 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all">Abort Action</button>
+             <button onClick={showConfirm.onConfirm} className="flex-1 py-4 bg-red-500 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all shadow-xl shadow-red-200">Yes, Confirm</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

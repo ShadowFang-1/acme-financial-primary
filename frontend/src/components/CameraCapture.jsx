@@ -5,6 +5,7 @@ import { Camera, X, RefreshCw, Zap } from 'lucide-react';
 const CameraCapture = ({ onCapture, onCancel }) => {
   const webcamRef = useRef(null);
   const [isCapturing, setIsCapturing] = useState(true);
+  const [error, setError] = useState(null);
 
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current.getScreenshot();
@@ -39,8 +40,7 @@ const CameraCapture = ({ onCapture, onCancel }) => {
           videoConstraints={videoConstraints}
           playsInline // Essential for iOS support
           onUserMediaError={() => {
-             alert('The system could not engage your camera module. Verification protocols mandate camera access. Please verify your browser/OS permissions.');
-             onCancel();
+             setError("Camera module access rejected. Verification protocols mandate hardware engagement. Check browser privacy settings.");
           }}
           className="h-full w-full object-cover"
         />
@@ -49,6 +49,21 @@ const CameraCapture = ({ onCapture, onCancel }) => {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-80 h-80 border-4 border-white/30 rounded-full border-dashed animate-[pulse_3s_infinite]"></div>
         </div>
+
+        {error && (
+            <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-8 text-center animate-in fade-in duration-300">
+                <div className="max-w-xs space-y-6">
+                    <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-3xl flex items-center justify-center mx-auto">
+                        <Zap size={32} />
+                    </div>
+                    <div>
+                        <h4 className="text-white font-black uppercase italic tracking-tighter text-lg mb-2">Engage Failure</h4>
+                        <p className="text-slate-400 text-xs font-bold leading-relaxed">{error}</p>
+                    </div>
+                    <button onClick={onCancel} className="w-full py-4 bg-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-white/20 transition-all">Abort Protocol</button>
+                </div>
+            </div>
+        )}
       </div>
 
       <div className="p-8 sm:p-12 bg-slate-900 border-t border-white/10 flex flex-col items-center gap-6 sm:gap-8">
@@ -74,8 +89,8 @@ const CameraCapture = ({ onCapture, onCancel }) => {
             <button 
                 className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white/5 flex items-center justify-center text-white hover:bg-white/10 transition-all border border-white/5"
                 onClick={() => {
-                   alert('Camera stream desynchronized. Initializing system reset.');
-                   window.location.reload();
+                   setError("System desynchronization. Preparing for protocol reset.");
+                   setTimeout(() => window.location.reload(), 2000);
                 }} 
             >
                 <RefreshCw size={24} />

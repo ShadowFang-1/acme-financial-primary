@@ -45,6 +45,13 @@ const AdminDashboard = () => {
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
   const [userTransactions, setUserTransactions] = useState([]);
+  const [toast, setToast] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(null); // { title: '', message: '', onConfirm: fn }
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const fetchData = async () => {
     try {
@@ -72,18 +79,26 @@ const AdminDashboard = () => {
       fetchData();
       if (selectedUserStats) fetchUserTransactions(selectedUserStats.id);
     } catch (err) {
-      alert('Action failed: ' + (err.response?.data?.message || err.message));
+      showToast('Action failed: ' + (err.response?.data?.message || err.message), 'error');
     }
   };
 
   const handleDeleteUser = async (id) => {
-    if (!window.confirm('CRITICAL ACTION: Are you sure you want to PERMANENTLY delete this user? This cannot be undone.')) return;
-    try {
-      await axios.delete(`/api/v1/admin/users/${id}`);
-      fetchData();
-    } catch (err) {
-      alert('Deletion failed: ' + (err.response?.data?.message || err.message));
-    }
+    setShowConfirm({
+      title: "Purge Node Registry",
+      message: "CRITICAL ACTION: Are you sure you want to PERMANENTLY delete this user? This will recursively wipe all connected financial nodes and history. This action is IRREVERSIBLE.",
+      onConfirm: async () => {
+        try {
+          await axios.delete(`/api/v1/admin/users/${id}`);
+          fetchData();
+          showToast("Node successfully purged from registry.");
+        } catch (err) {
+          showToast('Deletion failed: ' + (err.response?.data?.message || err.message), 'error');
+        } finally {
+          setShowConfirm(null);
+        }
+      }
+    });
   };
 
   const handleUpdateUserDetails = async (e) => {
@@ -98,14 +113,22 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteAccount = async (id) => {
-    if (!window.confirm('WARNING: Are you sure you want to PERMANENTLY delete this specific account and all its transaction history?')) return;
-    try {
-      await axios.delete(`/api/v1/admin/accounts/${id}`);
-      fetchData();
-      if (selectedUserStats) fetchUserTransactions(selectedUserStats.id);
-    } catch (err) {
-      alert('Account deletion failed');
-    }
+    setShowConfirm({
+      title: "Decommission Account",
+      message: "WARNING: Are you sure you want to PERMANENTLY delete this specific account and all its transaction history? This vault cannot be recovered.",
+      onConfirm: async () => {
+        try {
+          await axios.delete(`/api/v1/admin/accounts/${id}`);
+          fetchData();
+          if (selectedUserStats) fetchUserTransactions(selectedUserStats.id);
+          showToast("Account decommissioned.");
+        } catch (err) {
+          showToast('Account deletion failed', 'error');
+        } finally {
+          setShowConfirm(null);
+        }
+      }
+    });
   };
 
   const fetchUserTransactions = async (userId) => {
@@ -458,9 +481,7 @@ const AdminDashboard = () => {
             </form>
           </div>
         </div>
-      )}
-
-      {isStatsModalOpen && selectedUserStats && (
+      )}      {isStatsModalOpen && selectedUserStats && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-slate-900/80 backdrop-blur-sm animate-in fade-in">
            <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 max-h-[92vh] flex flex-col">
               <div className="p-6 sm:p-10 border-b border-slate-100 bg-primary text-white flex justify-between items-center relative overflow-hidden shrink-0">
@@ -576,6 +597,32 @@ const AdminDashboard = () => {
                  </div>
               </div>
            </div>
+        </div>
+      )}
+
+      {toast && (
+        <div className={`fixed top-8 right-8 z-[300] px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 max-w-md ${
+          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'
+        }`}>
+          <Activity size={20} />
+          <span className="font-bold text-sm">{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 opacity-70 hover:opacity-100"><X size={16}/></button>
+        </div>
+      )}
+
+      {showConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[500] flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white max-w-md w-full rounded-[3rem] p-10 shadow-3xl text-center">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+               <AlertTriangle size={32}/>
+            </div>
+            <h3 className="text-xl font-black italic text-primary mb-4">{showConfirm.title}</h3>
+            <p className="text-sm text-slate-500 font-bold leading-relaxed mb-8">{showConfirm.message}</p>
+            <div className="flex gap-4">
+               <button onClick={() => setShowConfirm(null)} className="flex-1 py-4 bg-slate-100 text-slate-500 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all">Abort Action</button>
+               <button onClick={showConfirm.onConfirm} className="flex-1 py-4 bg-red-500 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all shadow-xl shadow-red-200">Yes, Confirm</button>
+            </div>
+          </div>
         </div>
       )}
     </Layout>

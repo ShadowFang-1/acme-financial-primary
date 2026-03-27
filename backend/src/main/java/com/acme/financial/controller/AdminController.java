@@ -22,15 +22,18 @@ public class AdminController {
     private final AccountService accountService;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
+    private final com.acme.financial.repository.InvestmentRepository investmentRepository;
 
     public AdminController(UserRepository userRepository, 
                            AccountService accountService, 
                            AccountRepository accountRepository,
-                           TransactionRepository transactionRepository) {
+                           TransactionRepository transactionRepository,
+                           com.acme.financial.repository.InvestmentRepository investmentRepository) {
         this.userRepository = userRepository;
         this.accountService = accountService;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
+        this.investmentRepository = investmentRepository;
     }
 
     @GetMapping("/users")
@@ -121,6 +124,8 @@ public class AdminController {
     public ResponseEntity<java.util.List<java.util.Map<String, Object>>> getTransactionStats() {
         List<Transaction> all = transactionRepository.findAll();
         
+        List<com.acme.financial.entity.Investment> allInvestments = investmentRepository.findAll();
+        
         java.util.Map<String, java.util.Map<String, Double>> grouped = all.stream().collect(java.util.stream.Collectors.groupingBy(
             t -> t.getCreatedAt().toString().substring(0, 10),
             java.util.stream.Collectors.groupingBy(
@@ -129,14 +134,27 @@ public class AdminController {
             )
         ));
 
-        List<java.util.Map<String, Object>> result = grouped.entrySet().stream()
-                .map(e -> {
+        java.util.Map<String, Double> investGrouped = allInvestments.stream().collect(java.util.stream.Collectors.groupingBy(
+            i -> i.getCreatedAt().toString().substring(0, 10),
+            java.util.stream.Collectors.summingDouble(i -> i.getAmount().doubleValue())
+        ));
+
+        // Merge dates
+        java.util.Set<String> allDates = new java.util.HashSet<>(grouped.keySet());
+        allDates.addAll(investGrouped.keySet());
+
+        List<java.util.Map<String, Object>> result = allDates.stream()
+                .map(date -> {
                     java.util.Map<String, Object> map = new java.util.HashMap<>();
-                    map.put("date", e.getKey());
-                    map.put("DEPOSIT", e.getValue().getOrDefault("DEPOSIT", 0.0));
-                    map.put("WITHDRAWAL", e.getValue().getOrDefault("WITHDRAWAL", 0.0));
-                    map.put("TRANSFER", e.getValue().getOrDefault("TRANSFER", 0.0));
-                    map.put("total", e.getValue().values().stream().mapToDouble(d -> d).sum());
+                    map.put("date", date);
+                    java.util.Map<String, Double> types = grouped.getOrDefault(date, new java.util.HashMap<>());
+                    map.put("DEPOSIT", types.getOrDefault("DEPOSIT", 0.0));
+                    map.put("WITHDRAWAL", types.getOrDefault("WITHDRAWAL", 0.0));
+                    map.put("TRANSFER", types.getOrDefault("TRANSFER", 0.0));
+                    map.put("INVESTMENT", investGrouped.getOrDefault(date, 0.0));
+                    
+                    double total = types.values().stream().mapToDouble(d -> d).sum() + investGrouped.getOrDefault(date, 0.0);
+                    map.put("total", total);
                     return map;
                 })
                 .sorted((a, b) -> a.get("date").toString().compareTo(b.get("date").toString()))
