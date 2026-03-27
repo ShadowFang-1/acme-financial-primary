@@ -55,11 +55,13 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
   const { logout, user } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [sidebarIndex, setSidebarIndex] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const notificationRef = useRef(null);
+  const profileRef = useRef(null);
 
   const userMenuItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -121,6 +123,9 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setShowNotifications(false);
       }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -128,6 +133,7 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setShowProfileMenu(false);
   }, [location.pathname]);
 
   const SidebarContent = () => (
@@ -182,16 +188,10 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
 
   return (
     <div className="flex min-h-screen bg-[#f8fafc] font-inter overflow-x-hidden">
-      {/* Mobile Sidebar Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden animate-in fade-in duration-300"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
+      {/* Mobile Sidebar Overlay - REMOVED per user request for a cleaner mobile experience */}
 
-      {/* Sidebar */}
-      <aside className={`w-72 lg:w-80 bg-primary text-white flex flex-col p-8 fixed inset-y-0 z-[70] shadow-[10px_0_60px_rgba(0,0,0,0.1)] transition-transform duration-500 lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {/* Sidebar - Hidden on mobile, only visible for large screens (lg) */}
+      <aside className="w-80 bg-primary text-white flex-col p-8 fixed inset-y-0 z-[70] shadow-[10px_0_60px_rgba(0,0,0,0.1)] hidden lg:flex">
         <SidebarContent />
       </aside>
 
@@ -210,10 +210,10 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
                </Link>
              )}
              
-             {/* Profile Quick Access */}
-             <div className="relative" ref={notificationRef}>
+             {/* Profile Quick Access Box Card */}
+             <div className="relative" ref={profileRef}>
                 <button 
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
                   className="w-10 h-10 rounded-full bg-gradient-to-tr from-secondary to-amber-300 flex items-center justify-center text-primary font-black text-xs shadow-lg border-2 border-white/20 active:scale-95 transition-all overflow-hidden"
                 >
                   {user?.imageUrl ? (
@@ -223,18 +223,30 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
                   )}
                 </button>
                 
-                {isMobileMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-48 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 z-[100] animate-in slide-in-from-top-2">
-                    <div className="px-4 py-3 border-b border-slate-50 mb-1">
-                      <p className="font-black text-[10px] text-slate-400 uppercase tracking-widest leading-none mb-1">Signed in as</p>
-                      <p className="font-bold text-slate-900 text-xs truncate">{user?.username}</p>
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] border border-slate-100 p-2 z-[100] animate-in slide-in-from-top-3 duration-200">
+                    <div className="bg-slate-50 rounded-2xl p-4 mb-2 flex items-center gap-3">
+                       <div className="w-10 h-10 rounded-xl bg-primary text-secondary flex items-center justify-center font-black text-sm">
+                          {user?.username?.[0]?.toUpperCase()}
+                       </div>
+                       <div className="overflow-hidden">
+                          <p className="font-black text-xs text-primary truncate uppercase tracking-tighter">{user?.username}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest truncate">{user?.role} Access</p>
+                       </div>
                     </div>
-                    <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-[11px] font-black text-slate-600 hover:bg-slate-50 uppercase tracking-widest transition-colors">
-                      <User size={14} /> My Profile
-                    </Link>
-                    <button onClick={logout} className="flex items-center gap-3 px-4 py-2.5 text-[11px] font-black text-red-500 hover:bg-red-50 uppercase tracking-widest w-full text-left transition-colors">
-                      <LogOut size={14} /> Sign Out
-                    </button>
+                    <div className="space-y-1">
+                       <Link to="/profile" onClick={() => setShowProfileMenu(false)} className="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-50 transition-colors group">
+                          <div className="flex items-center gap-3">
+                             <User size={16} className="text-slate-400 group-hover:text-primary transition-colors" />
+                             <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest">My Analytics</span>
+                          </div>
+                          <ChevronRight size={14} className="text-slate-300" />
+                       </Link>
+                       <button onClick={logout} className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 transition-colors w-full group">
+                          <LogOut size={16} className="text-red-400 group-hover:text-red-500 transition-colors" />
+                          <span className="text-[11px] font-black text-red-500 uppercase tracking-widest">Logout Session</span>
+                       </button>
+                    </div>
                   </div>
                 )}
              </div>
