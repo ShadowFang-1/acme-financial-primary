@@ -250,12 +250,12 @@ const AdminDashboard = () => {
           { [
             { label: 'Total Users', value: users.length, icon: Users, color: 'bg-blue-50 text-blue-600' },
             { label: 'Total Accounts', value: accounts.length, icon: Landmark, color: 'bg-indigo-50 text-indigo-600' },
-            { label: 'Active Sessions', value: '12', icon: Activity, color: 'bg-green-50 text-green-600', desc: 'Concurrent users currently logged in and interacting with the ledger system.' },
-            { label: 'Security Alerts', value: '0', icon: Shield, color: 'bg-red-50 text-red-600', desc: 'Real-time flags for suspicious activities, including multiple login failures or abnormal transaction patterns.' }
+            { label: 'Active Sessions', value: '12', icon: Activity, color: 'bg-green-50 text-green-600', desc: 'Logged-in members currently interacting with the system ledger.' },
+            { label: 'Security Alerts', value: '0', icon: Shield, color: 'bg-red-50 text-red-600', desc: 'Real-time flags for suspicious activity or abnormal patterns.' }
           ].map((stat, i) => (
-            <div key={i} className="card group flex items-center gap-6 !p-5 sm:!p-8 relative">
-              <div className={`w-12 h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center shrink-0 ${stat.color}`}>
-                <stat.icon size={24} className="lg:size-7" />
+            <div key={i} className="card group flex items-center gap-4 sm:gap-6 !p-4 sm:!p-8 relative">
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0 ${stat.color}`}>
+                <stat.icon size={20} className="sm:size-6 lg:size-7" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
@@ -484,7 +484,7 @@ const AdminDashboard = () => {
       )}      {isStatsModalOpen && selectedUserStats && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 bg-slate-900/80 backdrop-blur-sm animate-in fade-in">
            <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 max-h-[92vh] flex flex-col">
-              <div className="p-6 sm:p-10 border-b border-slate-100 bg-primary text-white flex justify-between items-center relative overflow-hidden shrink-0">
+              <div className="p-5 sm:p-10 border-b border-slate-100 bg-primary text-white flex justify-between items-center relative overflow-hidden shrink-0">
                  <div className="absolute top-0 right-0 p-4 opacity-10">
                     <Activity size={180} />
                  </div>
@@ -497,7 +497,7 @@ const AdminDashboard = () => {
                  </button>
               </div>
 
-              <div className="p-6 sm:p-10 overflow-y-auto custom-scrollbar space-y-8 flex-1">
+              <div className="p-5 sm:p-10 overflow-y-auto custom-scrollbar space-y-8 flex-1">
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-5 sm:p-6 bg-slate-50 rounded-[1.5rem] sm:rounded-3xl border-2 border-slate-100">
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Aggregate Balance</p>
@@ -610,9 +610,9 @@ const AdminDashboard = () => {
         </div>
       )}
 
-      {showConfirm && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[500] flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
-          <div className="bg-white max-w-md w-full rounded-[3rem] p-10 shadow-3xl text-center">
+       {showConfirm && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[500] flex items-center justify-center p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white max-w-md w-full rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-10 shadow-3xl text-center">
             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
                <AlertTriangle size={32}/>
             </div>

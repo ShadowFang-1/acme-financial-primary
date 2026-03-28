@@ -349,10 +349,10 @@ const FinancialHub = () => {
       {/* Academy Overlay */}
       {showAcademy && (
         <div className="fixed inset-0 bg-slate-900/95 backdrop-blur-xl z-[200] flex items-center justify-center p-6 text-white animate-in zoom-in-95">
-           <button onClick={() => setShowAcademy(false)} className="absolute top-10 right-10 hover:rotate-90 transition-all"><X size={32}/></button>
-           <div className="max-w-4xl w-full text-left bg-slate-900/40 p-12 rounded-[3.5rem] border border-white/5 shadow-3xl overflow-y-auto max-h-[90vh]">
-              <h2 className="text-4xl font-black italic mb-4 text-center">ACME Academy: Asset Mastery</h2>
-              <p className="text-center text-slate-400 text-xs uppercase tracking-[0.5em] mb-12 italic font-bold">Institutional Intelligence Engine</p>
+           <button onClick={() => setShowAcademy(false)} className="absolute top-6 right-6 sm:top-10 sm:right-10 hover:rotate-90 transition-all z-50 text-white/50 hover:text-white"><X size={24} sm:size={32}/></button>
+           <div className="max-w-4xl w-full text-left bg-slate-900/40 p-6 sm:p-12 rounded-[2rem] sm:rounded-[3.5rem] border border-white/5 shadow-3xl overflow-y-auto max-h-[90vh]">
+              <h2 className="text-2xl sm:text-4xl font-black italic mb-4 text-center">ACME Academy: Asset Mastery</h2>
+              <p className="text-center text-slate-400 text-[10px] uppercase tracking-[0.3em] sm:tracking-[0.5em] mb-8 sm:mb-12 italic font-bold">Institutional Intelligence Engine</p>
               
               <div className="grid grid-cols-1 gap-8">
                  <div className="p-8 bg-white/5 rounded-3xl border border-white/10">
@@ -396,8 +396,8 @@ const FinancialHub = () => {
       {/* Trade Sandbox Overlay */}
       {showTradeSandbox && (
         <div className="fixed inset-0 bg-primary/40 backdrop-blur-xl z-[200] flex items-center justify-center p-6 animate-in fade-in">
-           <div className="bg-white w-full max-w-4xl rounded-[3rem] p-12 shadow-2xl relative overflow-hidden">
-              <button onClick={() => setShowTradeSandbox(false)} className="absolute top-8 right-8 text-slate-300 hover:text-primary transition-colors"><X size={24}/></button>
+           <div className="bg-white w-full max-w-4xl rounded-[2rem] sm:rounded-[3rem] p-6 sm:p-12 shadow-2xl relative overflow-hidden max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setShowTradeSandbox(false)} className="absolute top-6 right-6 text-slate-300 hover:text-primary transition-colors z-50"><X size={20}/></button>
               
               <div className="flex items-center justify-between mb-10">
                  <div className="flex items-center gap-4">
@@ -600,10 +600,10 @@ const FinancialHub = () => {
 
       {/* Loan Modal */}
       {showLoanModal && (
-        <div className="fixed inset-0 bg-primary/20 backdrop-blur-md z-[200] flex items-center justify-center p-6">
-           <div className="bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl text-center">
-              <div className="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6"><Banknote size={32}/></div>
-              <h3 className="text-xl font-black mb-2 italic">Institutional Credit</h3>
+        <div className="fixed inset-0 bg-primary/20 backdrop-blur-md z-[200] flex items-center justify-center p-4 sm:p-6">
+           <div className="bg-white w-full max-w-md p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl text-center max-h-[90vh] overflow-y-auto">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6"><Banknote size={28}/></div>
+              <h3 className="text-lg sm:text-xl font-black mb-2 italic">Institutional Credit</h3>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">8% APR • Auto-Repayment from Savings</p>
               
               <input type="number" value={loanAmount} onChange={e => setLoanAmount(e.target.value)} className="w-full p-5 bg-slate-50 border-2 rounded-2xl text-2xl font-black text-center mb-4" placeholder="Loan Amount (GHS)" />
@@ -646,8 +646,8 @@ const FinancialHub = () => {
               )}
 
               <div className="grid grid-cols-2 gap-4">
-                 <button onClick={() => setShowLoanModal(false)} className="py-4 bg-slate-100 rounded-xl font-black uppercase text-xs">Abort</button>
-                 <button onClick={handleApplyLoan} className="py-4 bg-blue-500 text-white rounded-xl font-black uppercase text-xs">Submit Request</button>
+                 <button onClick={() => setShowLoanModal(false)} className="py-4 bg-slate-100 rounded-xl uppercase text-xs">Abort</button>
+                 <button onClick={handleApplyLoan} className="py-4 bg-blue-500 text-white rounded-xl uppercase text-xs">Submit Request</button>
               </div>
            </div>
         </div>
@@ -655,11 +655,11 @@ const FinancialHub = () => {
 
       {/* Create Auto-Allocation Modal */}
       {showAllocModal && (
-        <div className="fixed inset-0 bg-indigo-500/10 backdrop-blur-md z-[200] flex items-center justify-center p-6">
-           <div className="bg-white w-full max-w-lg p-10 rounded-[2.5rem] shadow-3xl">
+        <div className="fixed inset-0 bg-indigo-500/10 backdrop-blur-md z-[200] flex items-center justify-center p-4 sm:p-6">
+           <div className="bg-white w-full max-w-lg p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-3xl max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-8">
-                 <h3 className="text-xl font-black italic flex items-center gap-2"><Repeat className="text-indigo-500" size={24}/> New Auto-Allocation</h3>
-                 <button onClick={() => setShowAllocModal(false)}><X size={20} className="text-slate-400"/></button>
+                 <h3 className="text-lg sm:text-xl font-black italic flex items-center gap-2"><Repeat className="text-indigo-500" size={20}/> New Auto-Allocation</h3>
+                 <button onClick={() => setShowAllocModal(false)}><X size={18} className="text-slate-400"/></button>
               </div>
 
               {/* Destination Type */}
@@ -728,24 +728,24 @@ const FinancialHub = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
          {/* Portfolio Performance */}
-         <div className="lg:col-span-8 space-y-10">
-            <section className="bg-white p-10 rounded-[3rem] border-2 border-slate-50 shadow-sm relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-10 opacity-[0.03]"><TrendingUp size={240}/></div>
-               <div className="flex justify-between items-end mb-10 relative z-10">
+         <div className="lg:col-span-8 space-y-8 sm:space-y-10">
+            <section className="bg-white p-6 sm:p-10 rounded-[2rem] sm:rounded-[3rem] border-2 border-slate-50 shadow-sm relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-6 sm:p-10 opacity-[0.03]"><TrendingUp size={160} sm:size={240}/></div>
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-8 sm:mb-10 relative z-10">
                   <div>
-                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Portfolio Allocation</p>
-                     <h3 className="text-4xl font-black text-primary italic">Strategic Asset Map</h3>
+                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 sm:mb-2">Portfolio Allocation</p>
+                     <h3 className="text-2xl sm:text-4xl font-black text-primary italic">Strategic Asset Map</h3>
                   </div>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
                      {hubData?.investments?.length > 0 && (
-                       <button onClick={() => setShowWithdrawModal(true)} className="px-6 py-3 bg-red-50 text-red-600 font-black rounded-2xl text-[10px] uppercase tracking-widest border border-red-100 hover:bg-red-100 transition-all">Liquify</button>
+                       <button onClick={() => setShowWithdrawModal(true)} className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 bg-red-50 text-red-600 font-black rounded-xl sm:rounded-2xl text-[10px] uppercase tracking-widest border border-red-100 hover:bg-red-100 transition-all">Liquify</button>
                      )}
-                     <button onClick={() => setShowInvestModal(true)} className="px-8 py-3 bg-primary text-secondary font-black rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">Invest</button>
+                     <button onClick={() => setShowInvestModal(true)} className="flex-1 sm:flex-none px-6 sm:px-8 py-2.5 sm:py-3 bg-primary text-secondary font-black rounded-xl sm:rounded-2xl text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all">Invest</button>
                   </div>
                </div>
-               
+
                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                  <div className="h-[280px]">
+                  <div className="h-[200px] sm:h-[280px]">
                     {hubData?.investments?.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                          <PieChart>

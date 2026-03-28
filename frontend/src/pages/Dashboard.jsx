@@ -332,9 +332,9 @@ const Dashboard = () => {
       {/* 💰 Modern Top-Up (Deposit) Modal */}
       {isDepositModalOpen && (
     <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden relative max-h-[90vh] overflow-y-auto">
-        <button onClick={resetModals} className="absolute top-6 sm:top-8 right-6 sm:right-10 p-2 hover:bg-slate-100 rounded-full transition-colors z-10">
-          <X size={20} className="text-slate-400" />
+      <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-10 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden relative max-h-[90vh] overflow-y-auto">
+        <button onClick={resetModals} className="absolute top-5 sm:top-8 right-5 sm:right-10 p-2 hover:bg-slate-100 rounded-full transition-colors z-20">
+          <X size={18} className="text-slate-400" />
         </button>
 
             {step === 'input' && (
@@ -456,10 +456,10 @@ const Dashboard = () => {
       {/* 💸 Modern Withdrawal Modal */}
     {isWithdrawModalOpen && (
       <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-        <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-10 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden relative max-h-[90vh] overflow-y-auto">
-          <button onClick={resetModals} className="absolute top-6 sm:top-8 right-6 sm:right-10 p-2 hover:bg-slate-100 rounded-full transition-colors z-10">
-            <X size={20} className="text-slate-400" />
-          </button>
+          <div className="bg-white rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-10 max-w-xl w-full shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden relative max-h-[90vh] overflow-y-auto">
+            <button onClick={resetModals} className="absolute top-5 sm:top-8 right-5 sm:right-10 p-2 hover:bg-slate-100 rounded-full transition-colors z-20">
+              <X size={18} className="text-slate-400" />
+            </button>
 
             {step === 'input' && (
               <div className="animate-in slide-in-from-right-4 duration-300">
@@ -635,12 +635,12 @@ const Dashboard = () => {
         {/* Account Cards (Section 1) */}
         <div className="col-span-1 lg:col-span-8 space-y-6 sm:space-y-10">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 px-1">
-            <h3 className="text-lg lg:text-2xl font-black text-primary uppercase tracking-tighter italic">Your Accounts</h3>
+            <h3 className="text-lg sm:text-2xl font-black text-primary uppercase tracking-tighter italic">Your Accounts</h3>
             <button 
               onClick={() => setShowNewAccountModal(true)}
-              className="px-6 py-2.5 bg-primary/5 text-[10px] font-black text-primary rounded-xl flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all group tracking-widest uppercase shadow-sm"
+              className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-primary/5 text-[10px] font-black text-primary rounded-xl flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all group tracking-widest uppercase shadow-sm"
             >
-              <Plus size={16} className="group-hover:rotate-90 transition-transform" /> <span className="sm:hidden">New Account</span><span className="hidden sm:inline">Open New Account</span>
+              <Plus size={16} className="group-hover:rotate-90 transition-transform" /> <span>Open New Account</span>
             </button>
           </div>
           
@@ -649,9 +649,9 @@ const Dashboard = () => {
               <div 
                 key={account.id} 
                 onClick={() => setActiveAccountIndex(idx)}
-                className={`relative overflow-hidden card p-5 sm:p-8 min-h-[220px] sm:min-h-[250px] flex flex-col justify-between group cursor-pointer transition-all duration-500 border-2 ${
+                className={`relative overflow-hidden card p-5 sm:p-8 min-h-[200px] sm:min-h-[250px] flex flex-col justify-between group cursor-pointer transition-all duration-500 border-2 ${
                   activeAccountIndex === idx 
-                    ? 'bg-primary text-white border-primary ring-4 sm:ring-8 ring-primary/5 scale-[1.02] sm:scale-[1.03] shadow-xl' 
+                    ? 'bg-primary text-white border-primary ring-4 sm:ring-8 ring-primary/5 scale-[1.01] sm:scale-[1.03] shadow-xl' 
                     : 'bg-white text-slate-800 border-slate-100 hover:border-primary/20 bg-gradient-to-br from-white to-slate-50'
                 }`}
               >
@@ -693,8 +693,8 @@ const Dashboard = () => {
                       {showBalance ? <Eye size={12} /> : <EyeOff size={12} />}
                     </button>
                   </div>
-                  <p className={`text-2xl lg:text-3xl font-black font-outfit tracking-tighter transition-all duration-300 ${activeAccountIndex === idx ? 'text-white' : 'text-slate-900'} ${!showBalance ? 'blur-md select-none' : ''}`}>
-                    <span className="text-lg lg:text-xl font-bold opacity-60 mr-1">GHS</span>
+                  <p className={`text-xl sm:text-2xl lg:text-3xl font-black font-outfit tracking-tighter transition-all duration-300 ${activeAccountIndex === idx ? 'text-white' : 'text-slate-900'} ${!showBalance ? 'blur-md select-none' : ''}`}>
+                    <span className="text-base sm:text-lg lg:text-xl font-bold opacity-60 mr-1">GHS</span>
                     {showBalance ? account.balance.toLocaleString(undefined, { minimumFractionDigits: 2 }) : '•••••••'}
                   </p>
                 </div>
@@ -712,8 +712,8 @@ const Dashboard = () => {
 
         {/* Quick Actions (Section 2 - Master Control) */}
         <div className="col-span-1 lg:col-span-4 space-y-8 lg:space-y-10">
-          <div className="card bg-slate-900 text-white border-none p-6 sm:p-10 overflow-hidden relative shadow-2xl rounded-[1.5rem] sm:rounded-[2.5rem]">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+          <div className="card bg-slate-900 text-white border-none p-5 sm:p-10 overflow-hidden relative shadow-2xl rounded-[1.5rem] sm:rounded-[2.5rem]">
+            <div className="absolute top-0 right-0 w-32 h-32 sm:w-48 sm:h-48 bg-primary/20 rounded-full blur-[60px] sm:blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
             
             <h3 className="text-lg sm:text-xl font-black mb-8 sm:mb-10 z-10 relative uppercase tracking-widest italic flex items-center gap-3">
                <Zap size={20} className="text-secondary" /> Master Control
@@ -794,7 +794,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="flex sm:flex-col justify-between items-center sm:items-end border-t sm:border-t-0 mt-3 sm:mt-0 pt-3 sm:pt-0 border-slate-100">
-                      <p className={`font-black text-xl lg:text-2xl font-outfit tracking-tighter ${isDebit ? 'text-slate-800' : 'text-green-600'}`}>
+                      <p className={`font-black text-lg sm:text-xl lg:text-2xl font-outfit tracking-tighter ${isDebit ? 'text-slate-800' : 'text-green-600'}`}>
                         {isDebit ? `-` : `+`} GHS {tx.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                       </p>
                       <div className="flex items-center justify-end gap-1.5 mt-1">
