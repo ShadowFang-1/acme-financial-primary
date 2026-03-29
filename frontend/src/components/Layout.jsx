@@ -139,7 +139,7 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
   const SidebarContent = () => (
     <>
       <Link to="/" className="mb-12 lg:mb-16 block hover:opacity-80 transition-opacity">
-        <Logo iconSize={22} textColor="text-white" />
+        <Logo textClass="text-secondary" />
       </Link>
       
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -200,7 +200,7 @@ const Layout = ({ children, title, subtitle, searchValue, onSearchChange, hideSe
         {/* Mobile Header - Minimalist Profile Access */}
         <div className="lg:hidden flex items-center justify-between p-4 bg-primary text-white sticky top-0 z-[50]">
           <Link to="/" className="opacity-80 hover:opacity-100 transition-opacity">
-             <Logo iconSize={18} textColor="text-white" hideTextOnMobile />
+             <Logo hideTextOnMobile textClass="text-secondary" />
           </Link>
           <div className="flex items-center gap-3">
              {!hideBell && unreadCount > 0 && user?.pushNotifications && (

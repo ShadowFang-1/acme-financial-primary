@@ -88,6 +88,10 @@ public class FinancialHubService {
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Operational Fault: No ACME Investment account located. Please open one first."));
 
+        if (savings.isFrozen() || investmentAcc.isFrozen()) {
+            throw new RuntimeException("Security Protocol Active: One or more involved accounts are under 'Lock Safe' protection. Transaction vetoed.");
+        }
+
         if (savings.getBalance().compareTo(amount) < 0) {
             throw new RuntimeException("Insufficient Liquidity: Your Savings account does not have enough capital.");
         }
@@ -150,6 +154,10 @@ public class FinancialHubService {
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Vault Error: No Investment vault identified."));
 
+        if (investmentAcc.isFrozen()) {
+            throw new RuntimeException("Operational Fault: The ACME Investment vault is currently locked for security.");
+        }
+
         if (investmentAcc.getBalance().compareTo(amount) < 0) {
             throw new RuntimeException("Liquidity Insufficient: Investment balance too low.");
         }
@@ -173,6 +181,10 @@ public class FinancialHubService {
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Vault Error: No primary Savings account identified."));
+
+        if (savings.isFrozen()) {
+            throw new RuntimeException("Security Protocol: Your primary Savings account is locked. Cannot receive liquidated capital.");
+        }
 
         investmentAcc.setBalance(investmentAcc.getBalance().subtract(amount));
         savings.setBalance(savings.getBalance().add(amount));
@@ -208,6 +220,10 @@ public class FinancialHubService {
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Vault Error: No source account to clear debt."));
+
+        if (savings.isFrozen()) {
+            throw new RuntimeException("Transaction Vetoed: The selected source account is currently under 'Lock Safe' protection.");
+        }
 
         if (savings.getBalance().compareTo(amount) < 0) {
             throw new RuntimeException("Liquidity Insufficient: Savings balance too low for repayment.");
@@ -266,6 +282,10 @@ public class FinancialHubService {
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()
             .orElseThrow(() -> new RuntimeException("No Savings account found."));
+
+        if (savings.isFrozen()) {
+            throw new RuntimeException("Institutional Block: This account is currently locked. Wealth contributions are suspended.");
+        }
 
         if (savings.getBalance().compareTo(amount) < 0) {
             throw new RuntimeException("Insufficient funds in Savings to contribute.");
@@ -342,6 +362,10 @@ public class FinancialHubService {
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Vault Error: No primary Savings account to receive institutional credit."));
         
+        if (savings.isFrozen()) {
+            throw new RuntimeException("Security Veto: Your receiving account is under 'Lock Safe' protection. Cannot disburse institutional credit.");
+        }
+
         savings.setBalance(savings.getBalance().add(amount));
         accountRepository.save(savings);
 
@@ -386,6 +410,10 @@ public class FinancialHubService {
             .filter(a -> a.getType() == AccountType.SAVINGS)
             .findFirst()
             .orElseThrow(() -> new RuntimeException("No Savings account found."));
+
+        if (savings.isFrozen()) {
+            throw new RuntimeException("Transaction Block: The destination Savings account is currently locked for security.");
+        }
 
         savings.setBalance(savings.getBalance().add(withdrawAmount));
         goal.setCurrentAmount(BigDecimal.ZERO);

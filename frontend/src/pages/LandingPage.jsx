@@ -131,14 +131,13 @@ const Team = () => (
               The ACME Engine powers high-velocity capital operations worldwide.
             </p>
         </div>
-        <button className="btn-outline font-black uppercase tracking-widest text-xs py-4 px-8 border-2">Explore the Collective</button>
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12">
         {[
-          { name: "Samuel Obeng", role: "Chief Executive Officer", bio: "Sam is a visionary leader with an intense focus on digital sovereignty and inclusive capital.", img: "https://images.unsplash.com/photo-1603575448360-153f093fd0b2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80" },
+          { name: "Samuel Obeng", role: "Chief Executive Officer", bio: "Sam is a visionary leader with an intense focus on digital sovereignty and inclusive capital.", img: "https://images.unsplash.com/photo-1531384441138-203d9ef0cb05?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80" },
           { name: "Amina Mensah", role: "Head of Operations", bio: "Amina ensures our systems run with military precision and world-class customer excellence.", img: "https://images.unsplash.com/photo-1531123414780-f74242c2b052?ixlib=rb-4.0.3&auto=format&fit=crop&w=687&q=80" },
-          { name: "David Tetteh", role: "Chief Technology Officer", bio: "David leads our engineering team, architecting the most secure digital banking infrastructure on the continent.", img: "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?ixlib=rb-4.0.3&auto=format&fit=crop&w=735&q=80" }
+          { name: "David Tetteh", role: "Chief Technology Officer", bio: "David leads our engineering team, architecting the most secure digital banking infrastructure on the continent.", img: "https://images.unsplash.com/photo-1506272517358-ee351decf626?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80" }
         ].map((member, i) => (
           <div key={i} className="group">
             <div className="relative overflow-hidden rounded-[2.5rem] lg:rounded-[50px] mb-8 h-[400px] lg:h-[450px] bg-slate-200">
