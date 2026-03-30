@@ -32,6 +32,19 @@ public class AuthService {
     private final NotificationService notificationService;
     private final EmailService emailService;
 
+    // Memory storage for unverified registrations (as requested: do not save to DB before verification)
+    private static class PendingUser {
+        com.acme.financial.dto.RegisterRequest request;
+        String otp;
+        java.time.LocalDateTime expiry;
+        PendingUser(com.acme.financial.dto.RegisterRequest request, String otp, java.time.LocalDateTime expiry) {
+            this.request = request;
+            this.otp = otp;
+            this.expiry = expiry;
+        }
+    }
+    private final java.util.Map<String, PendingUser> pendingRegistrations = new java.util.concurrent.ConcurrentHashMap<>();
+
     public AuthService(UserRepository repository, AccountRepository accountRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, NotificationService notificationService, EmailService emailService) {
         this.repository = repository;
         this.accountRepository = accountRepository;
@@ -65,45 +78,38 @@ public class AuthService {
         // Validate password strength
         validatePasswordStrength(request.getPassword());
 
-        Optional<User> existingUser = repository.findByEmail(request.getEmail());
-        
-        User user;
-        if (existingUser.isPresent()) {
-            user = existingUser.get();
-            if (user.isEnabled()) {
-                throw new DataIntegrityViolationException("An account with this email already exists.");
-            }
-            // User exists but is unverified: update details to match latest attempt
-            user.setUsername(request.getUsername());
-            user.setPassword(passwordEncoder.encode(request.getPassword()));
-            user.setPhoneNumber(request.getPhoneNumber());
-            user.setCountry(request.getCountry());
-            user.setDateOfBirth(request.getDateOfBirth());
-        } else {
-            user = User.builder()
-                    .username(request.getUsername())
-                    .email(request.getEmail())
-                    .password(passwordEncoder.encode(request.getPassword()))
-                    .role(Role.USER)
-                    .enabled(false) // Account starts as disabled until email is verified
-                    .phoneNumber(request.getPhoneNumber())
-                    .country(request.getCountry())
-                    .dateOfBirth(request.getDateOfBirth())
-                    .build();
+        if (repository.existsByEmail(request.getEmail())) {
+            throw new org.springframework.dao.DataIntegrityViolationException("Credential Node Overflow: This email identity is already anchored to a verified account.");
         }
 
-        User savedUser = repository.saveAndFlush(user);
+        // Generate challenge code
+        String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
         
-        // Dispatch Initial Verification Challenge
-        sendOtp(savedUser.getEmail(), savedUser.getEmail());
+        // Protocol 7: Store in memory only (Do NOT persist to database until verified)
+        pendingRegistrations.put(request.getEmail(), new PendingUser(
+            request, 
+            otp, 
+            java.time.LocalDateTime.now().plusMinutes(10)
+        ));
 
-        // Return response with OTP requirement
-        // Use getDisplayName() for the username field to avoid returning the email (which getUsername() returns for auth)
+        // Dispatch Challenge
+        System.out.println("========================================");
+        System.out.println(">>> [ANTIGRAVITY] PENDING REGISTRATION CODE");
+        System.out.println(">>> TARGET: " + request.getEmail());
+        System.out.println(">>> ACCESS CODE: " + otp);
+        System.out.println("========================================");
+
+        emailService.sendEmail(
+            request.getEmail(), 
+            "Verify Your ACME Collective Node",
+            "Your registration code is [" + otp + "]. Valid for 10 minutes. Your credentials are held in transition security until verification."
+        );
+
         return AuthenticationResponse.builder()
                 .requiresOtp(true)
-                .identifier(savedUser.getEmail())
-                .username(savedUser.getDisplayName())
-                .email(savedUser.getEmail())
+                .identifier(request.getEmail())
+                .username(request.getUsername())
+                .email(request.getEmail())
                 .build();
     }
 
@@ -135,53 +141,79 @@ public class AuthService {
 
     @Transactional
     public void sendOtp(String identifier, String email) {
+        // Case A: Is it a pending memory registration?
+        PendingUser pending = pendingRegistrations.get(email);
+        if (pending != null) {
+            String newOtp = String.format("%06d", new java.util.Random().nextInt(1000000));
+            pending.otp = newOtp;
+            pending.expiry = java.time.LocalDateTime.now().plusMinutes(5);
+            
+            System.out.println(">>> [RESEND PENDING] " + email + " -> " + newOtp);
+            emailService.sendEmail(email, "ACME Security Alert: New Code", "Your new registration code is [" + newOtp + "]");
+            return;
+        }
+
+        // Case B: Database User (Login or Forgot)
         User user = repository.findByIdentifier(identifier).stream()
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("User not found during OTP initiation"));
         
-        // Generate 6-digit OTP
         String otp = String.format("%06d", new java.util.Random().nextInt(1000000));
         user.setOneTimePassword(otp);
         user.setOtpExpiry(java.time.LocalDateTime.now().plusMinutes(5));
         repository.saveAndFlush(user);
 
-        // Security / Debug Dispatch: Always print to console for development visibility
-        System.out.println("========================================");
-        System.out.println(">>> [ANTIGRAVITY] SECURITY CODE DISPATCHED");
-        System.out.println(">>> TARGET: " + email);
-        System.out.println(">>> ACCESS CODE: " + otp);
-        System.out.println("========================================");
-
-        // Production dispatch via Email (100% Free)
-        emailService.sendEmail(
-            email, 
-            "ACME Financial Security Alert",
-            "Your ACME Financial login code is [" + otp + "]. Valid for 5 minutes."
-        );
+        System.out.println(">>> [SEND DB USER] " + email + " -> " + otp);
+        emailService.sendEmail(email, "ACME Security Alert", "Your access code is [" + otp + "]");
     }
 
 
     @Transactional
     public AuthenticationResponse verifyOtp(OtpVerificationRequest request) {
-        System.out.println(">>> [OTP VERIFY] Identifier: " + request.getIdentifier() + " | Code: " + request.getOtp());
-        
-        User user = repository.findByIdentifier(request.getIdentifier()).stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("User not found during OTP verification: " + request.getIdentifier()));
+        String identifier = request.getIdentifier();
+        String otp = request.getOtp();
 
-        if (user.getOneTimePassword() == null) {
-            System.err.println(">>> [OTP FAIL] No OTP on record for user: " + user.getUsername());
-            throw new BadCredentialsException("Invalid OTP code");
+        // 1. Check Pending Memory Registrations First
+        PendingUser pending = pendingRegistrations.get(identifier);
+        if (pending != null) {
+            if (!pending.otp.equals(otp)) {
+                throw new BadCredentialsException("Invalid registration code mismatch");
+            }
+            if (pending.expiry.isBefore(java.time.LocalDateTime.now())) {
+                pendingRegistrations.remove(identifier);
+                throw new BadCredentialsException("Registration link expired. Please sign up again.");
+            }
+
+            // SUCCESS: Persist to DB now
+            RegisterRequest reg = pending.request;
+            User user = User.builder()
+                    .username(reg.getUsername())
+                    .email(reg.getEmail())
+                    .password(passwordEncoder.encode(reg.getPassword()))
+                    .role(Role.USER)
+                    .enabled(true)
+                    .phoneNumber(reg.getPhoneNumber())
+                    .country(reg.getCountry())
+                    .dateOfBirth(reg.getDateOfBirth())
+                    .build();
+            
+            repository.saveAndFlush(user);
+            pendingRegistrations.remove(identifier);
+            System.out.println(">>> [DATABASE PERSISTENCE SUCCESS] Node verified and stored: " + user.getEmail());
+            return generateTokens(user);
         }
 
-        if (!user.getOneTimePassword().equals(request.getOtp())) {
-            System.err.println(">>> [OTP FAIL] Code mismatch. Expected: " + user.getOneTimePassword() + " | Got: " + request.getOtp());
-            throw new BadCredentialsException("Invalid OTP code");
+        // 2. Fallback: Database Verification (Login / Reset)
+        User user = repository.findByIdentifier(identifier).stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Active identifier not found in node registry"));
+
+        if (user.getOneTimePassword() == null || !user.getOneTimePassword().equals(otp)) {
+            throw new BadCredentialsException("Invalid challenge response");
         }
 
         if (user.getOtpExpiry() != null && user.getOtpExpiry().isBefore(java.time.LocalDateTime.now())) {
-            System.err.println(">>> [OTP FAIL] Code expired at: " + user.getOtpExpiry());
-            throw new BadCredentialsException("OTP has expired");
+            throw new BadCredentialsException("Challenge window closed (Time Expired)");
         }
 
         // Clear OTP after successful use
@@ -189,27 +221,20 @@ public class AuthService {
         user.setOtpExpiry(null);
         if (!user.isEnabled()) {
             user.setEnabled(true);
-            // No accounts are created on registration.
-            // User must manually open accounts via the "Open New Account" flow.
-            System.out.println(">>> [REGISTRATION SUCCESS] User verified (no auto-accounts): " + user.getUsername());
         }
         repository.saveAndFlush(user);
-        System.out.println(">>> [OTP SUCCESS] User verified: " + user.getUsername());
+        System.out.println(">>> [DATABASE VERIFY SUCCESS] Persistence validated for existing node: " + user.getUsername());
 
-        // If login notifications are enabled, send a notification
+        // Login alerts if enabled
         if (user.isLoginNotifications()) {
             String timestamp = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(java.time.LocalDateTime.now());
-            String alertMessage = "A new login session was initiated for your account at " + timestamp + 
-                                  ". If this wasn't you, please secure your account immediately.";
-            
-            // App notification
-            notificationService.notify(user, "Security Alert: New Login Detected", alertMessage);
-            
-            // Email notification
-            emailService.sendEmail(user.getEmail(), "Security Alert: ACME Login Detected", alertMessage);
-            System.out.println(">>> [SECURITY ALERT] Login notification dispatched to: " + user.getEmail());
+            emailService.sendEmail(user.getEmail(), "ACME Access Alert", "Successful login at " + timestamp);
         }
 
+        return generateTokens(user);
+    }
+
+    private AuthenticationResponse generateTokens(User user) {
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
         user.setRefreshToken(refreshToken);

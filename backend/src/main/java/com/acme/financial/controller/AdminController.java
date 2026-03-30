@@ -3,9 +3,7 @@ package com.acme.financial.controller;
 import com.acme.financial.entity.Account;
 import com.acme.financial.entity.Transaction;
 import com.acme.financial.entity.User;
-import com.acme.financial.repository.AccountRepository;
-import com.acme.financial.repository.TransactionRepository;
-import com.acme.financial.repository.UserRepository;
+import com.acme.financial.repository.*;
 import com.acme.financial.service.AccountService;
 
 import org.springframework.http.ResponseEntity;
@@ -22,18 +20,33 @@ public class AdminController {
     private final AccountService accountService;
     private final AccountRepository accountRepository;
     private final TransactionRepository transactionRepository;
-    private final com.acme.financial.repository.InvestmentRepository investmentRepository;
+    private final InvestmentRepository investmentRepository;
+    private final NotificationRepository notificationRepository;
+    private final AuditLogRepository auditLogRepository;
+    private final AutoAllocationRepository autoAllocationRepository;
+    private final LoanRepository loanRepository;
+    private final SavingsGoalRepository savingsGoalRepository;
 
     public AdminController(UserRepository userRepository, 
                            AccountService accountService, 
                            AccountRepository accountRepository,
                            TransactionRepository transactionRepository,
-                           com.acme.financial.repository.InvestmentRepository investmentRepository) {
+                           InvestmentRepository investmentRepository,
+                           NotificationRepository notificationRepository,
+                           AuditLogRepository auditLogRepository,
+                           AutoAllocationRepository autoAllocationRepository,
+                           LoanRepository loanRepository,
+                           SavingsGoalRepository savingsGoalRepository) {
         this.userRepository = userRepository;
         this.accountService = accountService;
         this.accountRepository = accountRepository;
         this.transactionRepository = transactionRepository;
         this.investmentRepository = investmentRepository;
+        this.notificationRepository = notificationRepository;
+        this.auditLogRepository = auditLogRepository;
+        this.autoAllocationRepository = autoAllocationRepository;
+        this.loanRepository = loanRepository;
+        this.savingsGoalRepository = savingsGoalRepository;
     }
 
     @GetMapping("/users")
@@ -80,11 +93,22 @@ public class AdminController {
         User user = userRepository.findById(id).orElse(null);
         if (user == null) return ResponseEntity.notFound().build();
         
+        // 1. Wipe all User-direct dependencies
+        notificationRepository.deleteAllByUser(user);
+        auditLogRepository.deleteAllByUser(user);
+        autoAllocationRepository.deleteAllByUser(user);
+        loanRepository.deleteAllByUser(user);
+        savingsGoalRepository.deleteAllByUser(user);
+        
+        // 2. Wipe all Account-linked dependencies
         List<Account> accounts = accountRepository.findByUser(user);
         for (Account account : accounts) {
             transactionRepository.deleteAllByAccount(account);
+            investmentRepository.deleteAllByAccount(account);
             accountRepository.delete(account);
         }
+        
+        // 3. Final purge: User Node
         userRepository.delete(user);
         return ResponseEntity.ok().build();
     }
