@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
-import java.util.stream.Collectors;
+// import java.util.stream.Collectors;
 
 @Service
 public class FinancialHubService {
@@ -69,6 +69,7 @@ public class FinancialHubService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public void invest(User user, BigDecimal amount, String interval, BigDecimal targetAmount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new RuntimeException("Operational Fault: Investment amount must be positive.");
@@ -144,6 +145,7 @@ public class FinancialHubService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public void withdrawInvestment(User user, Long investmentId, BigDecimal amount) {
         User managedUser = userRepository.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Institutional Fault: Session not located."));
@@ -209,6 +211,7 @@ public class FinancialHubService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public void payOffLoan(User user, Long loanId, BigDecimal amount) {
         User managedUser = userRepository.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Institutional Fault: Session not located."));
@@ -271,6 +274,7 @@ public class FinancialHubService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public void contributeToGoal(User user, Long goalId, BigDecimal amount) {
         User managedUser = userRepository.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Session Error: Identity not located."));
@@ -314,6 +318,7 @@ public class FinancialHubService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public Loan requestLoan(User user, BigDecimal amount, Integer months, String repaymentFrequency) {
         User managedUser = userRepository.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Institutional Fault: Session integrity failed."));
@@ -388,6 +393,7 @@ public class FinancialHubService {
     }
 
     @Transactional
+    @SuppressWarnings("null")
     public void withdrawGoal(User user, Long goalId) {
         User managedUser = userRepository.findByEmail(user.getUsername())
                 .orElseThrow(() -> new RuntimeException("Session Error: Identity not located."));

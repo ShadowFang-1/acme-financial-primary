@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
+@SuppressWarnings("null")
 public class UserService {
 
     private final UserRepository repository;

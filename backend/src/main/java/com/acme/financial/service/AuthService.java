@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.regex.Pattern;
 
 @Service
+@SuppressWarnings("null")
 public class AuthService {
 
     private final UserRepository repository;

@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@SuppressWarnings("null")
 public class TransactionService {
 
     private static final BigDecimal DEPOSIT_ALERT_THRESHOLD = new BigDecimal("100000");

@@ -11,11 +11,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@SuppressWarnings("null")
 public class AutoAllocationService {
 
     private final AutoAllocationRepository allocationRepository;
     private final AccountRepository accountRepository;
-    private final InvestmentRepository investmentRepository;
     private final SavingsGoalRepository savingsGoalRepository;
     private final LoanRepository loanRepository;
     private final TransactionRepository transactionRepository;
@@ -26,7 +26,6 @@ public class AutoAllocationService {
     public AutoAllocationService(
             AutoAllocationRepository allocationRepository,
             AccountRepository accountRepository,
-            InvestmentRepository investmentRepository,
             SavingsGoalRepository savingsGoalRepository,
             LoanRepository loanRepository,
             TransactionRepository transactionRepository,
@@ -36,7 +35,6 @@ public class AutoAllocationService {
     ) {
         this.allocationRepository = allocationRepository;
         this.accountRepository = accountRepository;
-        this.investmentRepository = investmentRepository;
         this.savingsGoalRepository = savingsGoalRepository;
         this.loanRepository = loanRepository;
         this.transactionRepository = transactionRepository;

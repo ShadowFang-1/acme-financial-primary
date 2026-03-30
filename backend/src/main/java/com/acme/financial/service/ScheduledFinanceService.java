@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
+@SuppressWarnings("null")
 public class ScheduledFinanceService {
 
     private final InvestmentRepository investmentRepository;

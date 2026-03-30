@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Random;
 
 @Configuration
+@SuppressWarnings("null")
 public class AdminSetupConfig {
 
     @Bean

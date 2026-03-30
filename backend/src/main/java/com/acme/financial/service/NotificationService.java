@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@SuppressWarnings("null")
 public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final EmailService emailService;
