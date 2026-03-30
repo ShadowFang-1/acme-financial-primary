@@ -29,14 +29,12 @@ public class TransactionService {
     private final AccountRepository accountRepository;
     private final com.acme.financial.repository.UserRepository userRepository;
     private final NotificationService notificationService;
-    private final EmailService emailService;
 
-    public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository, com.acme.financial.repository.UserRepository userRepository, NotificationService notificationService, EmailService emailService) {
+    public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository, com.acme.financial.repository.UserRepository userRepository, NotificationService notificationService) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
-        this.emailService = emailService;
     }
 
     private void flagSecurityAlertToAdmin(String alertTitle, String alertMessage) {

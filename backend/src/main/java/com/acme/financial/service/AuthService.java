@@ -6,30 +6,24 @@ import com.acme.financial.dto.OtpVerificationRequest;
 import com.acme.financial.dto.RegisterRequest;
 import com.acme.financial.entity.Role;
 import com.acme.financial.entity.User;
-import com.acme.financial.repository.AccountRepository;
 import com.acme.financial.repository.UserRepository;
 import com.acme.financial.security.JwtService;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Service
 public class AuthService {
 
     private final UserRepository repository;
-    private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final NotificationService notificationService;
     private final EmailService emailService;
 
     // Memory storage for unverified registrations (as requested: do not save to DB before verification)
@@ -45,13 +39,11 @@ public class AuthService {
     }
     private final java.util.Map<String, PendingUser> pendingRegistrations = new java.util.concurrent.ConcurrentHashMap<>();
 
-    public AuthService(UserRepository repository, AccountRepository accountRepository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, NotificationService notificationService, EmailService emailService) {
+    public AuthService(UserRepository repository, PasswordEncoder passwordEncoder, JwtService jwtService, AuthenticationManager authenticationManager, EmailService emailService) {
         this.repository = repository;
-        this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.authenticationManager = authenticationManager;
-        this.notificationService = notificationService;
         this.emailService = emailService;
     }
 
