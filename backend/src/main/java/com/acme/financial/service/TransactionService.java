@@ -2,6 +2,7 @@ package com.acme.financial.service;
 
 import com.acme.financial.dto.TransferRequest;
 import com.acme.financial.entity.Account;
+import com.acme.financial.entity.Role;
 import com.acme.financial.entity.Transaction;
 import com.acme.financial.entity.TransactionType;
 import com.acme.financial.entity.User;
@@ -14,20 +15,52 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class TransactionService {
+
+    private static final BigDecimal DEPOSIT_ALERT_THRESHOLD = new BigDecimal("100000");
+    private static final BigDecimal DAILY_WITHDRAWAL_LIMIT = new BigDecimal("100000");
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
     private final com.acme.financial.repository.UserRepository userRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
-    public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository, com.acme.financial.repository.UserRepository userRepository, NotificationService notificationService) {
+    public TransactionService(TransactionRepository transactionRepository, AccountRepository accountRepository, com.acme.financial.repository.UserRepository userRepository, NotificationService notificationService, EmailService emailService) {
         this.transactionRepository = transactionRepository;
         this.accountRepository = accountRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.emailService = emailService;
+    }
+
+    private void flagSecurityAlertToAdmin(String alertTitle, String alertMessage) {
+        // Find all admin users and send them the security alert
+        List<User> admins = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == Role.ADMIN)
+                .toList();
+        for (User admin : admins) {
+            notificationService.notify(admin, "\u26A0 SECURITY ALERT: " + alertTitle, alertMessage);
+            System.out.println(">>> [SECURITY ALERT] Admin notified: " + admin.getEmail() + " | " + alertTitle);
+        }
+        if (admins.isEmpty()) {
+            System.err.println(">>> [SECURITY ALERT] No admin users found to notify! Alert: " + alertTitle);
+        }
+    }
+
+    private BigDecimal getDailyWithdrawalTotal(Account account) {
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        return transactionRepository.findAll().stream()
+                .filter(t -> t.getType() == TransactionType.WITHDRAWAL)
+                .filter(t -> t.getSenderAccount() != null && t.getSenderAccount().getId().equals(account.getId()))
+                .filter(t -> t.getCreatedAt() != null && t.getCreatedAt().isAfter(startOfDay))
+                .map(Transaction::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -148,6 +181,18 @@ public class TransactionService {
         String msg = "Your account " + account.getAccountNumber() + " was topped up with GHS " + amount;
         if (description != null) msg += " via " + description;
         notificationService.notify(account.getUser(), "Deposit Successful", msg);
+
+        // SECURITY: Flag deposits above 100,000 to admin
+        if (amount.compareTo(DEPOSIT_ALERT_THRESHOLD) > 0) {
+            String ownerName = account.getUser().getDisplayName() != null ? account.getUser().getDisplayName() : account.getUser().getEmail();
+            String alertMsg = "HIGH-VALUE DEPOSIT DETECTED\n" +
+                    "User: " + ownerName + "\n" +
+                    "Account: " + account.getAccountNumber() + "\n" +
+                    "Amount: GHS " + amount.toPlainString() + "\n" +
+                    "Channel: " + (description != null ? description : "N/A") + "\n" +
+                    "Time: " + java.time.LocalDateTime.now();
+            flagSecurityAlertToAdmin("Large Deposit - GHS " + amount.toPlainString(), alertMsg);
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -171,6 +216,23 @@ public class TransactionService {
             throw new RuntimeException("Insufficient funds for withdrawal");
         }
 
+        // SECURITY: Check daily withdrawal limit (100,000 per day)
+        BigDecimal todaysTotal = getDailyWithdrawalTotal(account);
+        BigDecimal projectedTotal = todaysTotal.add(amount);
+        if (projectedTotal.compareTo(DAILY_WITHDRAWAL_LIMIT) > 0) {
+            BigDecimal remaining = DAILY_WITHDRAWAL_LIMIT.subtract(todaysTotal);
+            String ownerName = user.getDisplayName() != null ? user.getDisplayName() : user.getEmail();
+            String alertMsg = "DAILY WITHDRAWAL LIMIT EXCEEDED\n" +
+                    "User: " + ownerName + "\n" +
+                    "Account: " + account.getAccountNumber() + "\n" +
+                    "Attempted: GHS " + amount.toPlainString() + "\n" +
+                    "Today's Total: GHS " + todaysTotal.toPlainString() + "\n" +
+                    "Daily Limit: GHS " + DAILY_WITHDRAWAL_LIMIT.toPlainString() + "\n" +
+                    "Time: " + java.time.LocalDateTime.now();
+            flagSecurityAlertToAdmin("Withdrawal Limit Breach Attempt", alertMsg);
+            throw new RuntimeException("Daily withdrawal limit exceeded. Maximum GHS " + DAILY_WITHDRAWAL_LIMIT.toPlainString() + " per day. You have already withdrawn GHS " + todaysTotal.toPlainString() + " today. Remaining allowance: GHS " + (remaining.compareTo(BigDecimal.ZERO) > 0 ? remaining.toPlainString() : "0") + ".");
+        }
+
         account.setBalance(account.getBalance().subtract(amount));
         
         Transaction transaction = Transaction.builder()
@@ -187,6 +249,17 @@ public class TransactionService {
         String msg = "You withdrew GHS " + amount + " from account " + account.getAccountNumber();
         if (description != null) msg += " for " + description;
         notificationService.notify(user, "Withdrawal Successful", msg);
+
+        // SECURITY: Flag any single withdrawal above 100,000 to admin
+        if (amount.compareTo(DAILY_WITHDRAWAL_LIMIT) > 0) {
+            String ownerName = user.getDisplayName() != null ? user.getDisplayName() : user.getEmail();
+            String alertMsg2 = "HIGH-VALUE WITHDRAWAL\n" +
+                    "User: " + ownerName + "\n" +
+                    "Account: " + account.getAccountNumber() + "\n" +
+                    "Amount: GHS " + amount.toPlainString() + "\n" +
+                    "Time: " + java.time.LocalDateTime.now();
+            flagSecurityAlertToAdmin("Large Withdrawal - GHS " + amount.toPlainString(), alertMsg2);
+        }
     }
 
     @Transactional(readOnly = true)

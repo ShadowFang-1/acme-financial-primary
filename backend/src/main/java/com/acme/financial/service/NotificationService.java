@@ -10,9 +10,11 @@ import java.util.List;
 @Service
 public class NotificationService {
     private final NotificationRepository notificationRepository;
+    private final EmailService emailService;
 
-    public NotificationService(NotificationRepository notificationRepository) {
+    public NotificationService(NotificationRepository notificationRepository, EmailService emailService) {
         this.notificationRepository = notificationRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -23,6 +25,13 @@ public class NotificationService {
                 .message(message)
                 .build();
         notificationRepository.save(notification);
+        
+        // Mirror to Email for Omni-channel awareness
+        try {
+            emailService.sendEmail(user.getEmail(), title, message);
+        } catch (Exception e) {
+            System.err.println(">>> [NOTIFY] Email mirroring failed for " + user.getEmail() + ": " + e.getMessage());
+        }
     }
 
     public List<Notification> getNotifications(User user) {

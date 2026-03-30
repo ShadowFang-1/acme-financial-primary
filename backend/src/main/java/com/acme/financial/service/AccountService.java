@@ -45,6 +45,14 @@ public class AccountService {
             throw new RuntimeException("Operational Limit: You already possess a signature ACME " + type + " account. Only one account of each type is permitted for security integrity.");
         }
 
+        // Investment accounts require a savings account first
+        if (type == AccountType.INVESTMENT) {
+            boolean hasSavings = existing.stream().anyMatch(a -> a.getType() == AccountType.SAVINGS);
+            if (!hasSavings) {
+                throw new RuntimeException("You must create a Savings account before opening an Investment account. The Investment account depends on your Savings foundation.");
+            }
+        }
+
         // Auto-initialize balance for Institutional Onboarding
         BigDecimal initialBalance = type == AccountType.INVESTMENT ? BigDecimal.ZERO : new BigDecimal("100.00");
 

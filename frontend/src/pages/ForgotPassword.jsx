@@ -1,9 +1,37 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Lock, Mail, Loader2, ArrowLeft, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, Loader2, ArrowLeft, KeyRound, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Logo from '../components/Logo';
 import OtpModal from '../components/OtpModal';
+import { validatePassword, getPasswordStrength, isPasswordValid } from '../utils/validation';
+
+const PasswordStrengthBar = ({ password }) => {
+  const strength = getPasswordStrength(password);
+  const errors = validatePassword(password || '');
+  if (!password) return null;
+  return (
+    <div className="mt-2 space-y-1.5">
+      <div className="flex gap-1">
+        {[1,2,3,4,5].map(i => (
+          <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= strength.level ? strength.color : 'bg-slate-100'}`} />
+        ))}
+      </div>
+      <div className="flex justify-between items-center">
+        <span className={`text-[9px] font-black uppercase tracking-widest ${strength.level >= 4 ? 'text-green-500' : strength.level >= 2 ? 'text-orange-500' : 'text-red-500'}`}>{strength.label}</span>
+      </div>
+      {errors.length > 0 && (
+        <div className="space-y-0.5">
+          {errors.map((err, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-[9px] text-red-400 font-bold">
+              <AlertCircle size={8} /> {err}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -40,6 +68,13 @@ const ForgotPassword = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
+    
+    // Validate password before submitting
+    if (!isPasswordValid(newPassword)) {
+      setError('Password must be at least 8 characters with uppercase, lowercase, numbers, and symbols.');
+      return;
+    }
+    
     setLoading(true);
     setError('');
     try {
@@ -122,7 +157,7 @@ const ForgotPassword = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    minLength="6"
+                    minLength="8"
                     className="input-field pl-11 pr-12"
                     placeholder="••••••••"
                     value={newPassword}
@@ -136,6 +171,7 @@ const ForgotPassword = () => {
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
+                <PasswordStrengthBar password={newPassword} />
               </div>
 
               <button

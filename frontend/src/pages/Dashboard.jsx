@@ -104,13 +104,22 @@ const Dashboard = () => {
   const [showNewAccountModal, setShowNewAccountModal] = useState(false);
 
   const handleCreateAccount = async (type = 'SAVINGS') => {
+    // Client-side dependency check
+    if (type === 'INVESTMENT') {
+      const hasSavings = accounts.some(a => a.type === 'SAVINGS');
+      if (!hasSavings) {
+        showToast("Access Denied: You must establish a Savings foundation before opening an Investment portfolio.", "error");
+        return;
+      }
+    }
+
     try {
       await axios.post(`/api/v1/banking/accounts?type=${type}`);
-      showToast(`New ${type} Account opened successfully!`);
+      showToast(`Elite ${type} Node activated successfully!`);
       setShowNewAccountModal(false);
       fetchData();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to open account', 'error');
+      showToast(err.response?.data?.message || 'Operational failure: Could not open account', 'error');
     }
   };
 
@@ -598,34 +607,56 @@ const Dashboard = () => {
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[2.5rem] p-8 sm:p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-8">
-               <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter italic">Open New Account</h3>
+               <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tighter italic">Provision New Node</h3>
                <button onClick={() => setShowNewAccountModal(false)} className="p-2 hover:bg-slate-100 rounded-full"><X size={20} className="text-slate-400" /></button>
             </div>
             <div className="space-y-4">
-               <button 
-                 onClick={() => handleCreateAccount('SAVINGS')}
-                 className="w-full flex items-center gap-5 p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 hover:border-primary hover:bg-primary/5 transition-all group"
-               >
-                 <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                   <Wallet size={24} />
+               {/* Show Savings option Only if it doesn't exist */}
+               {!accounts.some(a => a.type === 'SAVINGS') && (
+                 <button 
+                   onClick={() => handleCreateAccount('SAVINGS')}
+                   className="w-full flex items-center gap-5 p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 hover:border-primary hover:bg-primary/5 transition-all group"
+                 >
+                   <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                     <Wallet size={24} />
+                   </div>
+                   <div className="text-left">
+                     <p className="font-black text-primary text-sm uppercase tracking-widest">Savings Account</p>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Foundational Treasury Asset</p>
+                   </div>
+                 </button>
+               )}
+
+               {/* Show Investment option Only if it doesn't exist AND Savings exists */}
+               {!accounts.some(a => a.type === 'INVESTMENT') && (
+                 <button 
+                   onClick={() => handleCreateAccount('INVESTMENT')}
+                   disabled={!accounts.some(a => a.type === 'SAVINGS')}
+                   className={`w-full flex items-center gap-5 p-6 rounded-2xl border-2 transition-all group ${
+                     accounts.some(a => a.type === 'SAVINGS') 
+                       ? 'bg-slate-50 border-slate-100 hover:border-secondary hover:bg-secondary/5' 
+                       : 'bg-slate-50/50 border-slate-50 opacity-50 cursor-not-allowed'
+                   }`}
+                 >
+                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-transform shadow-lg ${
+                     accounts.some(a => a.type === 'SAVINGS') ? 'bg-blue-50 text-blue-500 group-hover:scale-110' : 'bg-slate-100 text-slate-300'
+                   }`}>
+                     <TrendingUp size={24} />
+                   </div>
+                   <div className="text-left">
+                     <p className="font-black text-primary text-sm uppercase tracking-widest">Investment Account</p>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">
+                        {accounts.some(a => a.type === 'SAVINGS') ? 'High-yield portfolio vault' : 'Maturity required: open savings first'}
+                     </p>
+                   </div>
+                 </button>
+               )}
+
+               {accounts.length >= 2 && (
+                 <div className="py-10 text-center">
+                    <p className="text-slate-400 text-xs font-bold uppercase italic tracking-widest">Global Asset Limit Reached</p>
                  </div>
-                 <div className="text-left">
-                   <p className="font-black text-primary text-sm uppercase tracking-widest">Savings Account</p>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Standard deposit & withdrawal</p>
-                 </div>
-               </button>
-               <button 
-                 onClick={() => handleCreateAccount('INVESTMENT')}
-                 className="w-full flex items-center gap-5 p-6 bg-slate-50 rounded-2xl border-2 border-slate-100 hover:border-secondary hover:bg-secondary/5 transition-all group"
-               >
-                 <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                   <TrendingUp size={24} />
-                 </div>
-                 <div className="text-left">
-                   <p className="font-black text-primary text-sm uppercase tracking-widest">Investment Account</p>
-                   <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">High-yield portfolio vault</p>
-                 </div>
-               </button>
+               )}
             </div>
           </div>
         </div>
@@ -636,16 +667,18 @@ const Dashboard = () => {
         <div className="col-span-1 lg:col-span-8 space-y-6 sm:space-y-10">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 px-1">
             <h3 className="text-lg sm:text-2xl font-black text-primary uppercase tracking-tighter italic">Your Accounts</h3>
-            <button 
-              onClick={() => setShowNewAccountModal(true)}
-              className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-primary/5 text-[10px] font-black text-primary rounded-xl flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all group tracking-widest uppercase shadow-sm"
-            >
-              <Plus size={16} className="group-hover:rotate-90 transition-transform" /> <span>Open New Account</span>
-            </button>
+            {accounts.length < 2 && (
+              <button 
+                onClick={() => setShowNewAccountModal(true)}
+                className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-primary/5 text-[10px] font-black text-primary rounded-xl flex items-center justify-center gap-2 hover:bg-primary hover:text-white transition-all group tracking-widest uppercase shadow-sm"
+              >
+                <Plus size={16} className="group-hover:rotate-90 transition-transform" /> <span>Open New Account</span>
+              </button>
+            )}
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-8">
-            {accounts.map((account, idx) => (
+            {accounts.length > 0 ? accounts.map((account, idx) => (
               <div 
                 key={account.id} 
                 onClick={() => setActiveAccountIndex(idx)}
@@ -706,7 +739,21 @@ const Dashboard = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="col-span-2 py-12 px-6 bg-slate-50 rounded-[2.5rem] border-2 border-dashed border-slate-200 text-center">
+                 <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-6 text-slate-300 shadow-sm">
+                    <Wallet size={32} />
+                 </div>
+                 <h4 className="text-xl font-black text-slate-800 uppercase italic tracking-tighter">Initialize Your Portfolio</h4>
+                 <p className="text-xs text-slate-400 font-bold uppercase mt-2 max-w-xs mx-auto leading-relaxed">Your digital ledger is current offline. Open a Savings account to activate your global banking nodes.</p>
+                 <button 
+                  onClick={() => setShowNewAccountModal(true)}
+                  className="mt-8 px-10 py-4 bg-primary text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:scale-105 transition-all shadow-xl shadow-primary/20"
+                 >
+                   Open Savings Account
+                 </button>
+              </div>
+            )}
           </div>
         </div>
 

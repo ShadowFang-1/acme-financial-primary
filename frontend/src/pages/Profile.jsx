@@ -1,29 +1,42 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { 
-  User, 
-  Mail, 
-  Shield, 
-  Key, 
-  Bell, 
-  Globe, 
-  Phone,
-  Camera,
-  CheckCircle2,
-  ChevronRight,
-  Loader2,
-  X,
-  Save,
-  AlertCircle,
-  Upload,
-  Eye,
-  Maximize2,
-  Image as ImageIcon
-} from 'lucide-react';
 import Layout from '../components/Layout';
 import axios from 'axios';
 import ImageEditor from '../components/ImageEditor';
 import CameraCapture from '../components/CameraCapture';
+import { 
+  validatePassword, 
+  getPasswordStrength, 
+  isPasswordValid, 
+  validatePhoneNumber, 
+  validateDateOfBirth,
+  getPhoneHint
+} from '../utils/validation';
+
+const PasswordStrengthBar = ({ password }) => {
+  const strength = getPasswordStrength(password);
+  const errors = validatePassword(password || '');
+  if (!password) return null;
+  return (
+    <div className="mt-2 space-y-1.5">
+      <div className="flex gap-1">
+        {[1,2,3,4,5].map(i => (
+          <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= strength.level ? strength.color : 'bg-slate-100'}`} />
+        ))}
+      </div>
+      <div className="flex justify-between items-center">
+        <span className={`text-[9px] font-black uppercase tracking-widest ${strength.level >= 4 ? 'text-green-500' : strength.level >= 2 ? 'text-orange-500' : 'text-red-500'}`}>{strength.label}</span>
+      </div>
+      {errors.length > 0 && (
+        <div className="space-y-0.5">
+          {errors.map((err, i) => (
+            <div key={i} className="flex items-center gap-1.5 text-[9px] text-red-400 font-bold">
+              <AlertCircle size={8} /> {err}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Profile = () => {
   const { user, updateUser, logout } = useAuth();
@@ -100,6 +113,27 @@ const Profile = () => {
     setUpdating(true);
     setError('');
     setSuccess('');
+
+    // Client-side validation
+    const phoneErrors = validatePhoneNumber(editForm.phoneNumber, editForm.country);
+    if (phoneErrors.length > 0) {
+      setError(phoneErrors.join('. '));
+      setUpdating(false);
+      return;
+    }
+
+    if (editForm.dateOfBirth) {
+      const parts = editForm.dateOfBirth.split('-'); // YYYY-MM-DD
+      if (parts.length === 3) {
+        const dobErrors = validateDateOfBirth(parts[2], parts[1], parts[0]);
+        if (dobErrors.length > 0) {
+          setError(dobErrors.join('. '));
+          setUpdating(false);
+          return;
+        }
+      }
+    }
+
     try {
       const res = await axios.put('/api/v1/users/me', editForm);
       setProfileData(res.data);
@@ -119,6 +153,13 @@ const Profile = () => {
       setError('New passwords do not match');
       return;
     }
+
+    // Complexity check
+    if (!isPasswordValid(passForm.newPassword)) {
+      setError('New password does not meet security requirements.');
+      return;
+    }
+
     setUpdating(true);
     setError('');
     setSuccess('');
@@ -541,16 +582,22 @@ const Profile = () => {
                     onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
                     placeholder="+233..."
                   />
+                  {editForm.country && <p className="text-[8px] text-slate-400 font-bold mt-1 ml-1 truncate">{getPhoneHint(editForm.country)}</p>}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Country</label>
-                  <input 
-                    type="text" 
+                  <select 
                     className="input-field"
                     value={editForm.country}
                     onChange={(e) => setEditForm({ ...editForm, country: e.target.value })}
-                    placeholder="e.g. Ghana"
-                  />
+                  >
+                    <option value="">Select Country</option>
+                    <option value="Ghana">Ghana</option>
+                    <option value="Nigeria">Nigeria</option>
+                    <option value="USA">USA</option>
+                    <option value="UK">UK</option>
+                    <option value="South Africa">South Africa</option>
+                  </select>
                 </div>
               </div>
               <div className="space-y-2">
@@ -600,13 +647,14 @@ const Profile = () => {
               </div>
               <div className="space-y-2 pt-4 border-t border-slate-100">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest">New Password</label>
-                <input 
-                   type="password" 
-                   className="input-field"
-                   required
-                   value={passForm.newPassword}
-                   onChange={(e) => setPassForm({ ...passForm, newPassword: e.target.value })}
-                />
+                 <input 
+                    type="password" 
+                    className="input-field"
+                    required
+                    value={passForm.newPassword}
+                    onChange={(e) => setPassForm({ ...passForm, newPassword: e.target.value })}
+                 />
+                 <PasswordStrengthBar password={passForm.newPassword} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Confirm New Password</label>

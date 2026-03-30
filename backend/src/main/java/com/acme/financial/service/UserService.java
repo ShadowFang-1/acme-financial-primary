@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.regex.Pattern;
 
 import java.util.Collections;
 import java.util.List;
@@ -69,14 +70,35 @@ public class UserService {
         repository.save(existingUser);
     }
 
+    private void validatePasswordStrength(String password) {
+        if (password == null || password.length() < 8) {
+            throw new RuntimeException("Password must be at least 8 characters long");
+        }
+        if (!Pattern.compile("[A-Z]").matcher(password).find()) {
+            throw new RuntimeException("Password must contain at least one uppercase letter");
+        }
+        if (!Pattern.compile("[a-z]").matcher(password).find()) {
+            throw new RuntimeException("Password must contain at least one lowercase letter");
+        }
+        if (!Pattern.compile("[0-9]").matcher(password).find()) {
+            throw new RuntimeException("Password must contain at least one number");
+        }
+        if (!Pattern.compile("[!@#$%^&*()_+\\-=\\[\\]{};':\\\\|,.<>/?`~]").matcher(password).find()) {
+            throw new RuntimeException("Password must contain at least one special symbol (!@#$%^&*...)");
+        }
+    }
+
     @Transactional
     public void changePassword(User user, ChangePasswordRequest request) {
         User existingUser = repository.findById(user.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), existingUser.getPassword())) {
-            throw new RuntimeException("Incorrect current password");
+            throw new RuntimeException("Password mismatch: Your current password is incorrect. Please check and try again.");
         }
+
+        // Validate new password strength
+        validatePasswordStrength(request.getNewPassword());
 
         existingUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
         repository.save(existingUser);

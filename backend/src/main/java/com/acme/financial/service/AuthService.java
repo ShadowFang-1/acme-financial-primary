@@ -4,8 +4,6 @@ import com.acme.financial.dto.AuthenticationRequest;
 import com.acme.financial.dto.AuthenticationResponse;
 import com.acme.financial.dto.OtpVerificationRequest;
 import com.acme.financial.dto.RegisterRequest;
-import com.acme.financial.entity.Account;
-import com.acme.financial.entity.AccountType;
 import com.acme.financial.entity.Role;
 import com.acme.financial.entity.User;
 import com.acme.financial.repository.AccountRepository;
@@ -20,9 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.Optional;
-import java.util.Random;
+import java.util.regex.Pattern;
 
 @Service
 public class AuthService {
@@ -45,8 +42,29 @@ public class AuthService {
         this.emailService = emailService;
     }
 
+    private void validatePasswordStrength(String password) {
+        if (password == null || password.length() < 8) {
+            throw new RuntimeException("Password must be at least 8 characters long");
+        }
+        if (!Pattern.compile("[A-Z]").matcher(password).find()) {
+            throw new RuntimeException("Password must contain at least one uppercase letter");
+        }
+        if (!Pattern.compile("[a-z]").matcher(password).find()) {
+            throw new RuntimeException("Password must contain at least one lowercase letter");
+        }
+        if (!Pattern.compile("[0-9]").matcher(password).find()) {
+            throw new RuntimeException("Password must contain at least one number");
+        }
+        if (!Pattern.compile("[!@#$%^&*()_+\\-=\\[\\]{};':\\\\|,.<>/?`~]").matcher(password).find()) {
+            throw new RuntimeException("Password must contain at least one special symbol (!@#$%^&*...)");
+        }
+    }
+
     @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
+        // Validate password strength
+        validatePasswordStrength(request.getPassword());
+
         Optional<User> existingUser = repository.findByEmail(request.getEmail());
         
         User user;
@@ -171,25 +189,9 @@ public class AuthService {
         user.setOtpExpiry(null);
         if (!user.isEnabled()) {
             user.setEnabled(true);
-            
-            // Create Dual-Asset Foundation after first verification
-            Account savings = Account.builder()
-                    .user(user)
-                    .accountNumber(generateAccountNumber())
-                    .balance(new BigDecimal("1000.00")) 
-                    .type(AccountType.SAVINGS)
-                    .build();
-            
-            Account investment = Account.builder()
-                    .user(user)
-                    .accountNumber(generateAccountNumber())
-                    .balance(new BigDecimal("100.00")) // Base investment pool
-                    .type(AccountType.INVESTMENT)
-                    .build();
-
-            accountRepository.save(savings);
-            accountRepository.save(investment);
-            System.out.println(">>> [REGISTRATION SUCCESS] Dual accounts activated for: " + user.getUsername());
+            // No accounts are created on registration.
+            // User must manually open accounts via the "Open New Account" flow.
+            System.out.println(">>> [REGISTRATION SUCCESS] User verified (no auto-accounts): " + user.getUsername());
         }
         repository.saveAndFlush(user);
         System.out.println(">>> [OTP SUCCESS] User verified: " + user.getUsername());
@@ -256,6 +258,9 @@ public class AuthService {
     }
 
     public void resetPassword(String email, String otp, String newPassword) {
+        // Validate new password strength
+        validatePasswordStrength(newPassword);
+
         User user = repository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("No account found with this email"));
 
@@ -272,14 +277,5 @@ public class AuthService {
         user.setOtpExpiry(null);
         repository.save(user);
         System.out.println(">>> [RESET SUCCESS] Password updated for: " + email);
-    }
-
-    private String generateAccountNumber() {
-        Random random = new Random();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 10; i++) {
-            sb.append(random.nextInt(10));
-        }
-        return sb.toString();
     }
 }
