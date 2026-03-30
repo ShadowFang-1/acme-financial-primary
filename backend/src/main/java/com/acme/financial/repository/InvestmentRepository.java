@@ -1,7 +1,7 @@
 package com.acme.financial.repository;
 
 import com.acme.financial.entity.Investment;
-import com.acme.financial.entity.Account;
+import com.acme.financial.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,5 +12,5 @@ public interface InvestmentRepository extends JpaRepository<Investment, Long> {
 
     @Modifying
     @Transactional
-    void deleteAllByAccount(Account account);
+    void deleteAllByUser(User user);
 }

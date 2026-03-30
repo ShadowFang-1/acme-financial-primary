@@ -100,12 +100,12 @@ public class AdminController {
         autoAllocationRepository.deleteAllByUser(user);
         loanRepository.deleteAllByUser(user);
         savingsGoalRepository.deleteAllByUser(user);
+        investmentRepository.deleteAllByUser(user);
         
         // 2. Wipe all Account-linked dependencies
         List<Account> accounts = accountRepository.findByUser(user);
         for (Account account : accounts) {
             transactionRepository.deleteAllByAccount(account);
-            investmentRepository.deleteAllByAccount(account);
             accountRepository.delete(account);
         }
         
