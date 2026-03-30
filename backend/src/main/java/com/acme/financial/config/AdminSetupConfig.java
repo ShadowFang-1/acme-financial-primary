@@ -21,46 +21,55 @@ public class AdminSetupConfig {
     @Bean
     public CommandLineRunner setupAdmin(UserRepository repository, AccountRepository accountRepository, PasswordEncoder passwordEncoder) {
         return args -> {
-            String oldEmail = "admin@acme.com";
-            String newEmail = "dshout01@gmail.com";
-            
-            Optional<User> adminOpt = repository.findByEmail(newEmail);
-            User admin;
-            if (adminOpt.isEmpty()) {
-                // Check if old admin exists and needs migration
-                Optional<User> oldAdminOpt = repository.findByEmail(oldEmail);
-                if (oldAdminOpt.isPresent()) {
-                    admin = oldAdminOpt.get();
-                    admin.setEmail(newEmail);
-                    admin = repository.save(admin);
-                    System.out.println(">>> [IDENTITY MIGRATION] Existing admin migrated to: " + newEmail);
+            try {
+                System.out.println(">>> [STARTUP] Beginning identity verification for administrative node...");
+                String oldEmail = "admin@acme.com";
+                String newEmail = "dshout01@gmail.com";
+                
+                Optional<User> adminOpt = repository.findByEmail(newEmail);
+                User admin;
+                if (adminOpt.isEmpty()) {
+                    // Check if old admin exists and needs migration
+                    Optional<User> oldAdminOpt = repository.findByEmail(oldEmail);
+                    if (oldAdminOpt.isPresent()) {
+                        admin = oldAdminOpt.get();
+                        admin.setEmail(newEmail);
+                        admin = repository.save(admin);
+                        System.out.println(">>> [IDENTITY MIGRATION] Existing admin migrated to: " + newEmail);
+                    } else {
+                        // Create fresh admin
+                        admin = User.builder()
+                                .username("admin")
+                                .email(newEmail)
+                                .password(passwordEncoder.encode("admin123"))
+                                .role(Role.ADMIN)
+                                .enabled(true)
+                                .build();
+                        admin = repository.save(admin);
+                        System.out.println(">>> [PROVISIONING] New Admin user created with: " + newEmail);
+                    }
                 } else {
-                    // Create fresh admin
-                    admin = User.builder()
-                            .username("admin")
-                            .email(newEmail)
-                            .password(passwordEncoder.encode("admin123"))
-                            .role(Role.ADMIN)
-                            .enabled(true)
-                            .build();
-                    admin = repository.save(admin);
-                    System.out.println(">>> [PROVISIONING] New Admin user created with: " + newEmail);
+                    admin = adminOpt.get();
+                    System.out.println(">>> [VERIFIED] Administrative node detected: " + newEmail);
                 }
-            } else {
-                admin = adminOpt.get();
-            }
-            
-            // Ensure admin has an account
-            if (accountRepository.findByUser(admin).isEmpty()) {
-                Account account = Account.builder()
-                        .user(admin)
-                        .accountNumber(generateAccountNumber())
-                        .balance(new BigDecimal("10000.00"))
-                        .type(AccountType.CHECKING)
-                        .frozen(false)
-                        .build();
-                accountRepository.save(account);
-                System.out.println("Admin account created.");
+                
+                // Ensure admin has an account
+                if (accountRepository.findByUser(admin).isEmpty()) {
+                    Account account = Account.builder()
+                            .user(admin)
+                            .accountNumber(generateAccountNumber())
+                            .balance(new BigDecimal("10000.00"))
+                            .type(AccountType.CHECKING)
+                            .frozen(false)
+                            .build();
+                    accountRepository.save(account);
+                    System.out.println(">>> [PROVISIONING] Admin financial account established.");
+                }
+                System.out.println(">>> [SUCCESS] Administrative node initialization complete.");
+            } catch (Exception e) {
+                System.err.println(">>> [CRITICAL ERROR] Administrative node provisioning failed: " + e.getMessage());
+                e.printStackTrace();
+                // We do NOT rethrow here to prevent crashing the whole app
             }
         };
     }
